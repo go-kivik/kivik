@@ -116,10 +116,6 @@ func (db) Copy(context.Context, string, string, driver.Options) (string, error) 
 	return "", errors.New("not implemented")
 }
 
-func (db) Explain(context.Context, any, driver.Options) (*driver.QueryPlan, error) {
-	return nil, errors.New("not implemented")
-}
-
 // errDatabaseNotFound converts a sqlite "no such table"  error into a kivik
 // database not found error
 func (d *db) errDatabaseNotFound(err error) error {

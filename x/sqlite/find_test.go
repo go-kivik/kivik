@@ -462,6 +462,54 @@ func TestFindUsesIndex(t *testing.T) {
 	}
 }
 
+func TestExplain(t *testing.T) {
+	t.Parallel()
+	type test struct {
+		db      *testDB
+		query   string
+		want    *driver.QueryPlan
+		wantErr string
+	}
+
+	tests := testy.NewTable()
+	tests.Add("simple selector uses _all_docs index", func(t *testing.T) any {
+		d := newDB(t)
+		return test{
+			db:    d,
+			query: `{"selector":{"foo":"bar"}}`,
+			want: &driver.QueryPlan{
+				DBName:   "test",
+				Selector: map[string]any{"foo": "bar"},
+				Limit:    25,
+				Index: map[string]any{
+					"ddoc": nil,
+					"name": "_all_docs",
+					"type": "special",
+					"def":  map[string]any{"fields": []any{map[string]any{"_id": "asc"}}},
+				},
+			},
+		}
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		t.Parallel()
+		db := tt.db
+		if db == nil {
+			db = newDB(t)
+		}
+		got, err := db.Explain(context.Background(), json.RawMessage(tt.query), mock.NilOption)
+		if !testy.ErrorMatchesRE(tt.wantErr, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
+		if err != nil {
+			return
+		}
+		if d := cmp.Diff(tt.want, got); d != "" {
+			t.Errorf("Unexpected result: %s", d)
+		}
+	})
+}
+
 func Test_selectorToSQL(t *testing.T) {
 	t.Parallel()
 

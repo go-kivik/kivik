@@ -39,7 +39,7 @@ var allDocsIndex = map[string]any{
 }
 
 // Explain returns the query plan for a given _find query without executing it.
-func (d *db) Explain(_ context.Context, query any, _ driver.Options) (*driver.QueryPlan, error) {
+func (d *db) Explain(ctx context.Context, query any, _ driver.Options) (*driver.QueryPlan, error) {
 	vopts, err := options.FindOptions(query)
 	if err != nil {
 		return nil, err
@@ -57,12 +57,76 @@ func (d *db) Explain(_ context.Context, query any, _ driver.Options) (*driver.Qu
 		limit = defaultFindLimit
 	}
 
+	index, err := d.selectMangoIndex(ctx, raw.Selector, vopts.SortFields())
+	if err != nil {
+		return nil, err
+	}
+
 	return &driver.QueryPlan{
 		DBName:   d.name,
 		Selector: raw.Selector,
 		Limit:    limit,
-		Index:    allDocsIndex,
+		Index:    index,
 	}, nil
+}
+
+// selectMangoIndex queries the MangoIndexes table and returns the first index
+// whose fields cover all keys in the selector or all sort fields. Falls back
+// to allDocsIndex when no match is found.
+func (d *db) selectMangoIndex(ctx context.Context, selector map[string]any, sortFields []options.SortField) (map[string]any, error) {
+	rows, err := d.db.QueryContext(ctx, d.query(`SELECT ddoc, name, index_def FROM {{ .MangoIndexes }}`))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var ddoc, name, indexDef string
+		if err := rows.Scan(&ddoc, &name, &indexDef); err != nil {
+			return nil, err
+		}
+		idxFields, err := mango.ExtractIndexFields([]byte(indexDef))
+		if err != nil {
+			continue
+		}
+		if coversSelector(idxFields, selector) || coversSort(idxFields, sortFields) {
+			normalizedFields, err := mango.NormalizeIndexFields(indexDef)
+			if err != nil {
+				return nil, err
+			}
+			anyFields := mapFieldsToAny(normalizedFields)
+			return map[string]any{
+				"ddoc": ddoc,
+				"name": name,
+				"type": "json",
+				"def":  map[string]any{"fields": anyFields},
+			}, nil
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return allDocsIndex, nil
+}
+
+// coversSelector reports whether the index fields cover all top-level selector keys.
+func coversSelector(indexFields []string, selector map[string]any) bool {
+	if len(selector) == 0 {
+		return false
+	}
+	fieldSet := make(map[string]struct{}, len(indexFields))
+	for _, f := range indexFields {
+		fieldSet[f] = struct{}{}
+	}
+	for key := range selector {
+		if strings.HasPrefix(key, "$") {
+			continue
+		}
+		if _, ok := fieldSet[key]; !ok {
+			return false
+		}
+	}
+	return true
 }
 
 // TODO: Find should enforce a default limit of 25 when none is specified,
@@ -156,6 +220,20 @@ func coversSort(indexFields []string, sortFields []options.SortField) bool {
 		}
 	}
 	return true
+}
+
+// mapFieldsToAny converts a slice of field maps from map[string]string to map[string]any,
+// suitable for inclusion in query plan definitions.
+func mapFieldsToAny(fields []map[string]string) []any {
+	anyFields := make([]any, len(fields))
+	for i, f := range fields {
+		m := make(map[string]any, len(f))
+		for k, v := range f {
+			m[k] = v
+		}
+		anyFields[i] = m
+	}
+	return anyFields
 }
 
 // mangoIndexWhere builds a WHERE clause and args for querying the mango

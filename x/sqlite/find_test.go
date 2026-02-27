@@ -491,6 +491,56 @@ func TestExplain(t *testing.T) {
 		}
 	})
 
+	tests.Add("selector covered by mango index", func(t *testing.T) any {
+		d := newDB(t)
+		err := d.CreateIndex(context.Background(), "_design/idx", "idx", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		return test{
+			db:    d,
+			query: `{"selector":{"name":"foo"}}`,
+			want: &driver.QueryPlan{
+				DBName:   "test",
+				Selector: map[string]any{"name": "foo"},
+				Limit:    25,
+				Index: map[string]any{
+					"ddoc": "_design/idx",
+					"name": "idx",
+					"type": "json",
+					"def":  map[string]any{"fields": []any{map[string]any{"name": "asc"}}},
+				},
+			},
+		}
+	})
+
+	tests.Add("sort selects matching index", func(t *testing.T) any {
+		d := newDB(t)
+		err := d.CreateIndex(context.Background(), "_design/idx", "idx", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		return test{
+			db:    d,
+			query: `{"selector":{},"sort":["name"]}`,
+			want: &driver.QueryPlan{
+				DBName:   "test",
+				Selector: map[string]any{},
+				Limit:    25,
+				Index: map[string]any{
+					"ddoc": "_design/idx",
+					"name": "idx",
+					"type": "json",
+					"def":  map[string]any{"fields": []any{map[string]any{"name": "asc"}}},
+				},
+			},
+		}
+	})
+
+	// TODO: index ranking — when multiple indexes match, prefer json over
+	// special, then fewer fields, then alphabetical (matching CouchDB behavior).
+	// TODO: use_index — honor explicit index hints in the query.
+
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()
 		db := tt.db

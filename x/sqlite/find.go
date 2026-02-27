@@ -251,6 +251,9 @@ func (d *db) sortOrderByFromIndex(ctx context.Context, sortFields []options.Sort
 }
 
 func coversSort(indexFields []string, sortFields []options.SortField) bool {
+	if len(sortFields) == 0 {
+		return false
+	}
 	if len(sortFields) > len(indexFields) {
 		return false
 	}

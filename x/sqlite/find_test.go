@@ -27,6 +27,7 @@ import (
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/int/mock"
+	"github.com/go-kivik/kivik/v4/x/options"
 )
 
 func TestFind(t *testing.T) {
@@ -585,6 +586,32 @@ func TestExplain(t *testing.T) {
 		}
 		if d := cmp.Diff(tt.want, got); d != "" {
 			t.Errorf("Unexpected result: %s", d)
+		}
+	})
+}
+
+func Test_coversSort(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		indexFields []string
+		sortFields  []options.SortField
+		want        bool
+	}
+
+	tests := testy.NewTable()
+
+	tests.Add("empty sort fields returns false", test{
+		indexFields: []string{"name"},
+		sortFields:  nil,
+		want:        false,
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		t.Parallel()
+		got := coversSort(tt.indexFields, tt.sortFields)
+		if got != tt.want {
+			t.Errorf("coversSort() = %v, want %v", got, tt.want)
 		}
 	})
 }

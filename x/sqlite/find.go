@@ -88,7 +88,7 @@ func (d *db) Explain(ctx context.Context, query any, _ driver.Options) (*driver.
 
 	var fieldsOpt any
 	if len(fields) == 0 {
-		fieldsOpt = "all_fields"
+		fieldsOpt = []any{}
 	} else {
 		fieldsOpt = fields
 	}

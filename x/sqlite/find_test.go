@@ -782,9 +782,49 @@ func TestExplain(t *testing.T) {
 	// TODO: field overlap — prefer index whose fields most closely match
 	// the selector fields (least "extra" fields not in the selector),
 	// indicated by CouchDB's less_overlap reason code.
-	// TODO: alphabetical tiebreaker — when field count is equal, prefer
-	// the index whose ddoc/name comes first alphabetically, indicated by
-	// CouchDB's alphabetically_comes_after reason code.
+
+	tests.Add("alphabetical tiebreaker selects first ddoc name", func(t *testing.T) any {
+		d := newDB(t)
+		err := d.CreateIndex(context.Background(), "_design/beta", "beta", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		err = d.CreateIndex(context.Background(), "_design/alpha", "alpha", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		return test{
+			db:    d,
+			query: `{"selector":{"name":"foo"}}`,
+			want: &driver.QueryPlan{
+				DBName:   "test",
+				Selector: map[string]any{"name": "foo"},
+				Limit:    25,
+				Index: map[string]any{
+					"ddoc": "_design/alpha",
+					"name": "alpha",
+					"type": "json",
+					"def":  map[string]any{"fields": []any{map[string]any{"name": "asc"}}},
+				},
+				Options: map[string]any{
+					"conflicts":       false,
+					"bookmark":        "nil",
+					"sort":            map[string]any{},
+					"fields":          []any{},
+					"limit":           int64(25),
+					"skip":            int64(0),
+					"r":               1,
+					"update":          true,
+					"stable":          false,
+					"stale":           false,
+					"execution_stats": false,
+					"allow_fallback":  true,
+					"partition":       "",
+					"use_index":       []any{},
+				},
+			},
+		}
+	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()

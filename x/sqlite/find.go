@@ -159,6 +159,7 @@ func (d *db) selectMangoIndex(ctx context.Context, selector map[string]any, sort
 
 	var bestIndex map[string]any
 	bestFieldCount := -1
+	var bestDdoc string
 	for rows.Next() {
 		var ddoc, name, indexDef string
 		if err := rows.Scan(&ddoc, &name, &indexDef); err != nil {
@@ -169,7 +170,8 @@ func (d *db) selectMangoIndex(ctx context.Context, selector map[string]any, sort
 			continue
 		}
 		if coversSelector(idxFields, selector) || coversSort(idxFields, sortFields) {
-			if bestFieldCount >= 0 && len(idxFields) >= bestFieldCount {
+			fieldCount := len(idxFields)
+			if bestFieldCount >= 0 && (fieldCount > bestFieldCount || (fieldCount == bestFieldCount && ddoc >= bestDdoc)) {
 				continue
 			}
 			index, err := buildMangoIndexMap(ddoc, name, indexDef)
@@ -177,7 +179,8 @@ func (d *db) selectMangoIndex(ctx context.Context, selector map[string]any, sort
 				return nil, err
 			}
 			bestIndex = index
-			bestFieldCount = len(idxFields)
+			bestFieldCount = fieldCount
+			bestDdoc = ddoc
 		}
 	}
 	if err := rows.Err(); err != nil {

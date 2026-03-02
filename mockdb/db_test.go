@@ -848,7 +848,7 @@ func TestExplain(t *testing.T) {
 			db.ExpectExplain().WillReturnError(errors.New("foo err"))
 		},
 		test: func(t *testing.T, c *kivik.Client) { //nolint:thelper // Not a helper
-			_, err := c.DB("foo").Explain(context.TODO(), "foo")
+			_, err := c.DB("foo").Explain(context.TODO(), map[string]any{"selector": map[string]any{}})
 			if !testy.ErrorMatches("foo err", err) {
 				t.Errorf("Unexpected error: %s", err)
 			}
@@ -860,7 +860,7 @@ func TestExplain(t *testing.T) {
 			m.ExpectDB().WillReturn(db)
 		},
 		test: func(t *testing.T, c *kivik.Client) { //nolint:thelper // Not a helper
-			_, err := c.DB("foo").Explain(context.TODO(), "foo")
+			_, err := c.DB("foo").Explain(context.TODO(), map[string]any{"selector": map[string]any{}})
 			if !testy.ErrorMatches("call to DB.Explain() was not expected, all expectations already fulfilled", err) {
 				t.Errorf("Unexpected error: %s", err)
 			}
@@ -903,7 +903,7 @@ func TestExplain(t *testing.T) {
 			db.ExpectExplain().WillDelay(time.Second)
 		},
 		test: func(t *testing.T, c *kivik.Client) { //nolint:thelper // Not a helper
-			_, err := c.DB("foo").Explain(newCanceledContext(), 123)
+			_, err := c.DB("foo").Explain(newCanceledContext(), map[string]any{"selector": map[string]any{}})
 			if !testy.ErrorMatches("context canceled", err) {
 				t.Errorf("Unexpected error: %s", err)
 			}
@@ -921,7 +921,7 @@ func TestExplain(t *testing.T) {
 		test: func(t *testing.T, c *kivik.Client) { //nolint:thelper // Not a helper
 			foo := c.DB("foo")
 			_ = c.DB("bar")
-			_, err := foo.Explain(context.TODO(), 123)
+			_, err := foo.Explain(context.TODO(), map[string]any{"selector": map[string]any{}})
 			if !testy.ErrorMatchesRE(`Expected: call to DB\(bar`, err) {
 				t.Errorf("Unexpected error: %s", err)
 			}

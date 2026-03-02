@@ -448,7 +448,7 @@ func TestExplain(t *testing.T) {
 			client: &Client{},
 			driverDB: &mock.Finder{
 				ExplainFunc: func(_ context.Context, query any, _ driver.Options) (*driver.QueryPlan, error) {
-					expectedQuery := int(3)
+					expectedQuery := json.RawMessage(`{"selector":{}}`)
 					if d := testy.DiffInterface(expectedQuery, query); d != nil {
 						return nil, fmt.Errorf("Unexpected query:\n%s", d)
 					}
@@ -456,7 +456,7 @@ func TestExplain(t *testing.T) {
 				},
 			},
 		},
-		query:    int(3),
+		query:    `{"selector":{}}`,
 		expected: &QueryPlan{DBName: "foo"},
 	})
 	tests.Add("client closed", tt{

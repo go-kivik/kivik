@@ -179,12 +179,16 @@ func (db *DB) Explain(ctx context.Context, query any, options ...Option) (*Query
 		return nil, db.err
 	}
 	if explainer, ok := db.driverDB.(driver.Finder); ok {
+		jsonQuery, err := toQuery(query, options...)
+		if err != nil {
+			return nil, err
+		}
 		endQuery, err := db.startQuery()
 		if err != nil {
 			return nil, err
 		}
 		defer endQuery()
-		plan, err := explainer.Explain(ctx, query, multiOptions(options))
+		plan, err := explainer.Explain(ctx, jsonQuery, multiOptions(options))
 		if err != nil {
 			return nil, err
 		}

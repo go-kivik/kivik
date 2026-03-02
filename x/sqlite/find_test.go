@@ -488,6 +488,22 @@ func TestExplain(t *testing.T) {
 					"type": "special",
 					"def":  map[string]any{"fields": []any{map[string]any{"_id": "asc"}}},
 				},
+				Options: map[string]any{
+					"conflicts":       false,
+					"bookmark":        "nil",
+					"sort":            map[string]any{},
+					"fields":          "all_fields",
+					"limit":           int64(25),
+					"skip":            int64(0),
+					"r":               1,
+					"update":          true,
+					"stable":          false,
+					"stale":           false,
+					"execution_stats": false,
+					"allow_fallback":  true,
+					"partition":       "",
+					"use_index":       []any{},
+				},
 			},
 		}
 	})
@@ -510,6 +526,22 @@ func TestExplain(t *testing.T) {
 					"name": "idx",
 					"type": "json",
 					"def":  map[string]any{"fields": []any{map[string]any{"name": "asc"}}},
+				},
+				Options: map[string]any{
+					"conflicts":       false,
+					"bookmark":        "nil",
+					"sort":            map[string]any{},
+					"fields":          "all_fields",
+					"limit":           int64(25),
+					"skip":            int64(0),
+					"r":               1,
+					"update":          true,
+					"stable":          false,
+					"stale":           false,
+					"execution_stats": false,
+					"allow_fallback":  true,
+					"partition":       "",
+					"use_index":       []any{},
 				},
 			},
 		}
@@ -534,6 +566,22 @@ func TestExplain(t *testing.T) {
 					"type": "json",
 					"def":  map[string]any{"fields": []any{map[string]any{"name": "asc"}}},
 				},
+				Options: map[string]any{
+					"conflicts":       false,
+					"bookmark":        "nil",
+					"sort":            map[string]string{"name": "asc"},
+					"fields":          "all_fields",
+					"limit":           int64(25),
+					"skip":            int64(0),
+					"r":               1,
+					"update":          true,
+					"stable":          false,
+					"stale":           false,
+					"execution_stats": false,
+					"allow_fallback":  true,
+					"partition":       "",
+					"use_index":       []any{},
+				},
 			},
 		}
 	})
@@ -551,6 +599,22 @@ func TestExplain(t *testing.T) {
 				"name": "_all_docs",
 				"type": "special",
 				"def":  map[string]any{"fields": []any{map[string]any{"_id": "asc"}}},
+			},
+			Options: map[string]any{
+				"conflicts":       false,
+				"bookmark":        "nil",
+				"sort":            map[string]any{},
+				"fields":          []any{"name", "age"},
+				"limit":           int64(25),
+				"skip":            int64(5),
+				"r":               1,
+				"update":          true,
+				"stable":          false,
+				"stale":           false,
+				"execution_stats": false,
+				"allow_fallback":  true,
+				"partition":       "",
+				"use_index":       []any{},
 			},
 		},
 	})
@@ -581,8 +645,95 @@ func TestExplain(t *testing.T) {
 					"type": "json",
 					"def":  map[string]any{"fields": []any{map[string]any{"name": "asc"}}},
 				},
+				Options: map[string]any{
+					"conflicts":       false,
+					"bookmark":        "nil",
+					"sort":            map[string]any{},
+					"fields":          "all_fields",
+					"limit":           int64(25),
+					"skip":            int64(0),
+					"r":               1,
+					"update":          true,
+					"stable":          false,
+					"stale":           false,
+					"execution_stats": false,
+					"allow_fallback":  true,
+					"partition":       "",
+					"use_index":       []any{"_design/idx", "idx"},
+				},
 			},
 		}
+	})
+
+	tests.Add("sort field populated in Options", func(t *testing.T) any {
+		d := newDB(t)
+		err := d.CreateIndex(context.Background(), "_design/idx", "byName", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		return test{
+			db:    d,
+			query: `{"selector":{},"sort":["name"]}`,
+			want: &driver.QueryPlan{
+				DBName:   "test",
+				Selector: map[string]any{},
+				Limit:    25,
+				Index: map[string]any{
+					"ddoc": "_design/idx",
+					"name": "byName",
+					"type": "json",
+					"def":  map[string]any{"fields": []any{map[string]any{"name": "asc"}}},
+				},
+				Options: map[string]any{
+					"conflicts":       false,
+					"bookmark":        "nil",
+					"sort":            map[string]string{"name": "asc"},
+					"fields":          "all_fields",
+					"limit":           int64(25),
+					"skip":            int64(0),
+					"r":               1,
+					"update":          true,
+					"stable":          false,
+					"stale":           false,
+					"execution_stats": false,
+					"allow_fallback":  true,
+					"partition":       "",
+					"use_index":       []any{},
+				},
+			},
+		}
+	})
+
+	tests.Add("options map is populated", test{
+		query: `{"selector":{},"conflicts":true,"skip":3}`,
+		want: &driver.QueryPlan{
+			DBName:   "test",
+			Selector: map[string]any{},
+			Limit:    25,
+			Skip:     3,
+			Index: map[string]any{
+				"ddoc": nil,
+				"name": "_all_docs",
+				"type": "special",
+				"def":  map[string]any{"fields": []any{map[string]any{"_id": "asc"}}},
+			},
+			Options: map[string]any{
+				"conflicts":       true,
+				"bookmark":        "nil",
+				"sort":            map[string]any{},
+				"fields":          "all_fields",
+				"limit":           int64(25),
+				"skip":            int64(3),
+				"r":               1,
+				"update":          true,
+				"stable":          false,
+				"stale":           false,
+				"execution_stats": false,
+				"allow_fallback":  true,
+				"partition":       "",
+				"use_index":       []any{},
+			},
+		},
 	})
 
 	// TODO: index ranking — when multiple indexes match, prefer json over

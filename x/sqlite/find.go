@@ -81,6 +81,60 @@ func (d *db) Explain(ctx context.Context, query any, _ driver.Options) (*driver.
 		}
 	}
 
+	bookmark := vopts.Bookmark()
+	if bookmark == "" {
+		bookmark = "nil"
+	}
+
+	var fieldsOpt any
+	if len(fields) == 0 {
+		fieldsOpt = "all_fields"
+	} else {
+		fieldsOpt = fields
+	}
+
+	var useIndex []any
+	ddoc := vopts.UseIndexDdoc()
+	name := vopts.UseIndexName()
+	switch {
+	case ddoc == "":
+		useIndex = []any{}
+	case name == "":
+		useIndex = []any{ddoc}
+	default:
+		useIndex = []any{ddoc, name}
+	}
+
+	sortOpt := any(map[string]any{})
+	if sf := vopts.SortFields(); len(sf) > 0 {
+		sortMap := make(map[string]string, len(sf))
+		for _, f := range sf {
+			dir := "asc"
+			if f.Desc {
+				dir = "desc"
+			}
+			sortMap[f.Field] = dir
+		}
+		sortOpt = sortMap
+	}
+
+	opts := map[string]any{
+		"conflicts":       vopts.Conflicts(),
+		"bookmark":        bookmark,
+		"sort":            sortOpt,
+		"fields":          fieldsOpt,
+		"limit":           limit,
+		"skip":            vopts.FindSkip(),
+		"r":               1,
+		"update":          true,
+		"stable":          false,
+		"stale":           false,
+		"execution_stats": false,
+		"allow_fallback":  true,
+		"partition":       "",
+		"use_index":       useIndex,
+	}
+
 	return &driver.QueryPlan{
 		DBName:   d.name,
 		Selector: raw.Selector,
@@ -88,6 +142,7 @@ func (d *db) Explain(ctx context.Context, query any, _ driver.Options) (*driver.
 		Skip:     vopts.FindSkip(),
 		Fields:   fields,
 		Index:    index,
+		Options:  opts,
 	}, nil
 }
 

@@ -146,9 +146,10 @@ func (d *db) Explain(ctx context.Context, query any, _ driver.Options) (*driver.
 	}, nil
 }
 
-// selectMangoIndex queries the MangoIndexes table and returns the first index
-// whose fields cover all keys in the selector or all sort fields. Falls back
-// to allDocsIndex when no match is found.
+// selectMangoIndex queries the MangoIndexes table and returns the best matching
+// index whose fields cover all keys in the selector or all sort fields. When
+// multiple indexes match, the one with the fewest fields is preferred. Falls
+// back to allDocsIndex when no match is found.
 func (d *db) selectMangoIndex(ctx context.Context, selector map[string]any, sortFields []options.SortField) (map[string]any, error) {
 	rows, err := d.db.QueryContext(ctx, d.query(`SELECT ddoc, name, index_def FROM {{ .MangoIndexes }}`))
 	if err != nil {
@@ -156,6 +157,8 @@ func (d *db) selectMangoIndex(ctx context.Context, selector map[string]any, sort
 	}
 	defer rows.Close()
 
+	var bestIndex map[string]any
+	bestFieldCount := -1
 	for rows.Next() {
 		var ddoc, name, indexDef string
 		if err := rows.Scan(&ddoc, &name, &indexDef); err != nil {
@@ -166,15 +169,22 @@ func (d *db) selectMangoIndex(ctx context.Context, selector map[string]any, sort
 			continue
 		}
 		if coversSelector(idxFields, selector) || coversSort(idxFields, sortFields) {
+			if bestFieldCount >= 0 && len(idxFields) >= bestFieldCount {
+				continue
+			}
 			index, err := buildMangoIndexMap(ddoc, name, indexDef)
 			if err != nil {
 				return nil, err
 			}
-			return index, nil
+			bestIndex = index
+			bestFieldCount = len(idxFields)
 		}
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
+	}
+	if bestIndex != nil {
+		return bestIndex, nil
 	}
 	return allDocsIndex, nil
 }

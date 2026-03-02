@@ -779,9 +779,49 @@ func TestExplain(t *testing.T) {
 		}
 	})
 
-	// TODO: field overlap — prefer index whose fields most closely match
-	// the selector fields (least "extra" fields not in the selector),
-	// indicated by CouchDB's less_overlap reason code.
+	tests.Add("partial index coverage selects best partial match", func(t *testing.T) any {
+		d := newDB(t)
+		err := d.CreateIndex(context.Background(), "_design/idx", "idx", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		return test{
+			db:    d,
+			query: `{"selector":{"name":"foo","age":5}}`,
+			want: &driver.QueryPlan{
+				DBName:   "test",
+				Selector: map[string]any{"name": "foo", "age": float64(5)},
+				Limit:    25,
+				Index: map[string]any{
+					"ddoc": "_design/idx",
+					"name": "idx",
+					"type": "json",
+					"def":  map[string]any{"fields": []any{map[string]any{"name": "asc"}}},
+				},
+				Options: map[string]any{
+					"conflicts":       false,
+					"bookmark":        "nil",
+					"sort":            map[string]any{},
+					"fields":          []any{},
+					"limit":           int64(25),
+					"skip":            int64(0),
+					"r":               1,
+					"update":          true,
+					"stable":          false,
+					"stale":           false,
+					"execution_stats": false,
+					"allow_fallback":  true,
+					"partition":       "",
+					"use_index":       []any{},
+				},
+			},
+		}
+	})
+	// TODO: field overlap ranking — coversSelector should return the overlap
+	// count so candidates can be ranked by most selector fields covered. For
+	// selector {a, b, c}, index [a, b] should rank higher than index [a]
+	// (CouchDB's less_overlap reason code). Currently both are boolean
+	// matches, and fewer-fields ranking incorrectly prefers [a].
 
 	tests.Add("alphabetical tiebreaker selects first ddoc name", func(t *testing.T) any {
 		d := newDB(t)

@@ -1,9 +1,5 @@
 # SQLite Driver TODO
 
-## Missing Implementations
-
-- [ ] **Explain** (`db.go`) — Currently returns "not implemented"; useful for
-  Mango query debugging.
 ## Low Priority (polyfilled by kivik)
 
 - [ ] **BulkDocs** (`db.go`) — kivik emulates via individual Put/CreateDoc.

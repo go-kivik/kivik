@@ -32,7 +32,6 @@ func registerSuiteSQLite() {
 		"Compact.skip":         true,
 		"CreateIndex.skip":     true,
 		"DeleteIndex.skip":     true,
-		"Explain.skip":         true,
 		"Flush.skip":           true,
 		"GetIndexes.skip":      true,
 		"GetReplications.skip": true,
@@ -41,6 +40,34 @@ func registerSuiteSQLite() {
 		"ViewCleanup.skip":     true,
 
 		"AllDBs.expected": []string{"_global_changes", "_replicator", "_users"},
+
+		"Explain.databases": []string{},
+		"Explain.plan": &kivik.QueryPlan{
+			Index: map[string]any{
+				"ddoc": nil,
+				"name": "_all_docs",
+				"type": "special",
+				"def":  map[string]any{"fields": []any{map[string]any{"_id": "asc"}}},
+			},
+			Selector: map[string]any{"_id": map[string]any{"$gt": nil}},
+			Options: map[string]any{
+				"allow_fallback":  true,
+				"bookmark":        "nil",
+				"conflicts":       false,
+				"execution_stats": false,
+				"fields":          []any{},
+				"limit":           int64(25),
+				"partition":       "",
+				"r":               1,
+				"skip":            int64(0),
+				"sort":            map[string]any{},
+				"stable":          false,
+				"stale":           false,
+				"update":          true,
+				"use_index":       []any{},
+			},
+			Limit: 25,
+		},
 
 		"Version.version": `^0\.0\.1$`,
 		"Version.vendor":  `^Kivik$`,

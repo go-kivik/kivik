@@ -150,10 +150,14 @@ func (d *db) Explain(ctx context.Context, query any, _ driver.Options) (*driver.
 type indexCandidate struct {
 	index      map[string]any
 	fieldCount int
+	overlap    int
 	ddoc       string
 }
 
 func (c indexCandidate) cmp(other indexCandidate) int {
+	if c.overlap != other.overlap {
+		return other.overlap - c.overlap
+	}
 	if c.fieldCount != other.fieldCount {
 		return c.fieldCount - other.fieldCount
 	}
@@ -181,7 +185,8 @@ func (d *db) selectMangoIndex(ctx context.Context, selector map[string]any, sort
 		if err != nil {
 			continue
 		}
-		if !coversSelector(idxFields, selector) && !coversSort(idxFields, sortFields) {
+		overlap := coversSelector(idxFields, selector)
+		if overlap == 0 && !coversSort(idxFields, sortFields) {
 			continue
 		}
 		index, err := buildMangoIndexMap(ddoc, name, indexDef)
@@ -191,6 +196,7 @@ func (d *db) selectMangoIndex(ctx context.Context, selector map[string]any, sort
 		candidates = append(candidates, indexCandidate{
 			index:      index,
 			fieldCount: len(idxFields),
+			overlap:    overlap,
 			ddoc:       ddoc,
 		})
 	}
@@ -236,25 +242,26 @@ func buildMangoIndexMap(ddoc, name, indexDef string) (map[string]any, error) {
 	}, nil
 }
 
-// coversSelector reports whether the index fields cover at least one top-level
-// non-operator selector key.
-func coversSelector(indexFields []string, selector map[string]any) bool {
+// coversSelector returns the number of index fields that are top-level
+// non-operator selector keys. Returns 0 if selector is empty or no overlap.
+func coversSelector(indexFields []string, selector map[string]any) int {
 	if len(selector) == 0 {
-		return false
+		return 0
 	}
 	fieldSet := make(map[string]struct{}, len(indexFields))
 	for _, f := range indexFields {
 		fieldSet[f] = struct{}{}
 	}
+	count := 0
 	for key := range selector {
 		if strings.HasPrefix(key, "$") {
 			continue
 		}
 		if _, ok := fieldSet[key]; ok {
-			return true
+			count++
 		}
 	}
-	return false
+	return count
 }
 
 // TODO: Find should enforce a default limit of 25 when none is specified,

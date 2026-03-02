@@ -817,11 +817,48 @@ func TestExplain(t *testing.T) {
 			},
 		}
 	})
-	// TODO: field overlap ranking — coversSelector should return the overlap
-	// count so candidates can be ranked by most selector fields covered. For
-	// selector {a, b, c}, index [a, b] should rank higher than index [a]
-	// (CouchDB's less_overlap reason code). Currently both are boolean
-	// matches, and fewer-fields ranking incorrectly prefers [a].
+	tests.Add("prefers index with more selector field overlap", func(t *testing.T) any {
+		d := newDB(t)
+		err := d.CreateIndex(context.Background(), "_design/idx_name", "idx_name", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		err = d.CreateIndex(context.Background(), "_design/idx_name_age", "idx_name_age", json.RawMessage(`{"fields":["name","age"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		return test{
+			db:    d,
+			query: `{"selector":{"name":"foo","age":5,"city":"bar"}}`,
+			want: &driver.QueryPlan{
+				DBName:   "test",
+				Selector: map[string]any{"name": "foo", "age": float64(5), "city": "bar"},
+				Limit:    25,
+				Index: map[string]any{
+					"ddoc": "_design/idx_name_age",
+					"name": "idx_name_age",
+					"type": "json",
+					"def":  map[string]any{"fields": []any{map[string]any{"name": "asc"}, map[string]any{"age": "asc"}}},
+				},
+				Options: map[string]any{
+					"conflicts":       false,
+					"bookmark":        "nil",
+					"sort":            map[string]any{},
+					"fields":          []any{},
+					"limit":           int64(25),
+					"skip":            int64(0),
+					"r":               1,
+					"update":          true,
+					"stable":          false,
+					"stale":           false,
+					"execution_stats": false,
+					"allow_fallback":  true,
+					"partition":       "",
+					"use_index":       []any{},
+				},
+			},
+		}
+	})
 
 	tests.Add("alphabetical tiebreaker selects first ddoc name", func(t *testing.T) any {
 		d := newDB(t)

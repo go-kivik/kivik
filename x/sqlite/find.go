@@ -273,9 +273,7 @@ func (d *db) Find(ctx context.Context, query any, _ driver.Options) (driver.Rows
 		}
 	}
 
-	// TODO: CouchDB treats use_index as a hint, falling back with a warning
-	// if the index doesn't exist or doesn't match the selector. This errors
-	// instead. Should fall back gracefully and return a warning.
+	var warning string
 	if ddoc := vopts.UseIndexDdoc(); ddoc != "" {
 		where, args := mangoIndexWhere(ddoc, vopts.UseIndexName())
 		var count int
@@ -284,7 +282,7 @@ func (d *db) Find(ctx context.Context, query any, _ driver.Options) (driver.Rows
 			return nil, err
 		}
 		if count == 0 {
-			return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("index %q not found", ddoc)}
+			warning = ddoc + " was not used because it does not contain a valid index for this query."
 		}
 	}
 
@@ -297,7 +295,7 @@ func (d *db) Find(ctx context.Context, query any, _ driver.Options) (driver.Rows
 		selector = raw.Selector
 	}
 
-	return d.queryBuiltinView(ctx, vopts, selector, sortOrderBy)
+	return d.queryBuiltinView(ctx, vopts, selector, sortOrderBy, warning)
 }
 
 func (d *db) sortOrderByFromIndex(ctx context.Context, sortFields []options.SortField, useIndexDdoc, useIndexName string) (string, error) {

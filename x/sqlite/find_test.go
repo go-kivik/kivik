@@ -33,11 +33,12 @@ import (
 func TestFind(t *testing.T) {
 	t.Parallel()
 	type test struct {
-		db         *testDB
-		query      string
-		want       []rowResult
-		wantStatus int
-		wantErr    string
+		db          *testDB
+		query       string
+		want        []rowResult
+		wantStatus  int
+		wantErr     string
+		wantWarning string
 	}
 
 	tests := testy.NewTable()
@@ -309,10 +310,18 @@ func TestFind(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("use_index, not found", test{
-		query:      `{"selector":{},"use_index":"_design/nonexistent"}`,
-		wantStatus: http.StatusBadRequest,
-		wantErr:    `index "_design/nonexistent" not found`,
+	tests.Add("use_index, not found", func(t *testing.T) any {
+		d := newDB(t)
+		rev := d.tPut("foo", map[string]string{"foo": "bar"})
+
+		return test{
+			db:    d,
+			query: `{"selector":{},"use_index":"_design/nonexistent"}`,
+			want: []rowResult{
+				{Doc: `{"_id":"foo","_rev":"` + rev + `","foo":"bar"}`},
+			},
+			wantWarning: `_design/nonexistent was not used because it does not contain a valid index for this query.`,
+		}
 	})
 	tests.Add("use_index, array form", func(t *testing.T) any {
 		d := newDB(t)
@@ -416,6 +425,9 @@ func TestFind(t *testing.T) {
 			return
 		}
 		checkRows(t, rows, tt.want)
+		if d := cmp.Diff(tt.wantWarning, rows.(driver.RowsWarner).Warning()); d != "" {
+			t.Errorf("Unexpected warning: %s", d)
+		}
 	})
 }
 

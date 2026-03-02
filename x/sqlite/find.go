@@ -29,8 +29,6 @@ import (
 	"github.com/go-kivik/kivik/v4/x/options"
 )
 
-const defaultFindLimit = 25
-
 // allDocsIndex is the fallback index used when no mango index is selected.
 var allDocsIndex = map[string]any{
 	"ddoc": nil,
@@ -56,9 +54,6 @@ func (d *db) Explain(ctx context.Context, query any, _ driver.Options) (*driver.
 	}
 
 	limit := vopts.FindLimit()
-	if limit < 0 {
-		limit = defaultFindLimit
-	}
 
 	var index map[string]any
 	if ddoc := vopts.UseIndexDdoc(); ddoc != "" {
@@ -264,8 +259,6 @@ func coversSelector(indexFields []string, selector map[string]any) int {
 	return count
 }
 
-// TODO: Find should enforce a default limit of 25 when none is specified,
-// matching CouchDB's _find behavior.
 func (d *db) Find(ctx context.Context, query any, _ driver.Options) (driver.Rows, error) {
 	vopts, err := options.FindOptions(query)
 	if err != nil {

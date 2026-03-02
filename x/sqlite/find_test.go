@@ -382,6 +382,22 @@ func TestFind(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("default limit of 25 applied when no limit specified", func(t *testing.T) any {
+		d := newDB(t)
+		want := make([]rowResult, 0, 25)
+		for i := 0; i < 30; i++ {
+			id := fmt.Sprintf("doc%03d", i)
+			rev := d.tPut(id, map[string]any{"n": i})
+			if i < 25 {
+				want = append(want, rowResult{Doc: fmt.Sprintf(`{"_id":%q,"_rev":%q,"n":%d}`, id, rev, i)})
+			}
+		}
+		return test{
+			db:    d,
+			query: `{"selector":{}}`,
+			want:  want,
+		}
+	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()

@@ -1105,6 +1105,13 @@ func Test_selectorToSQL(t *testing.T) {
 		wantArgs:     nil,
 		wantComplete: true,
 	})
+	tests.Add("$not", test{
+		selector:     json.RawMessage(`{"age": {"$not": {"$eq": 21}}}`),
+		argOffset:    0,
+		wantConds:    []string{`NOT (json_extract(doc.doc, '$."age"') = $1)`},
+		wantArgs:     []any{float64(21)},
+		wantComplete: true,
+	})
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()
 		gotConds, gotArgs, gotComplete := selectorToSQL(tt.selector, tt.argOffset)

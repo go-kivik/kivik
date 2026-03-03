@@ -534,6 +534,13 @@ func fieldCondition(jsonPath string, val json.RawMessage, argOffset int) (string
 		case "$ne":
 			return comparisonCondition(expr, "!=", opVal, argOffset)
 
+		case "$not":
+			cond, args := fieldCondition(jsonPath, opVal, argOffset)
+			if cond == "" {
+				return "", nil
+			}
+			return "NOT (" + cond + ")", args
+
 		default:
 			return "", nil
 		}

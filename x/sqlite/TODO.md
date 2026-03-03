@@ -7,6 +7,10 @@
 
 ## Performance / Code Quality
 
+- [ ] **Find should use selected mango index** (`find.go`) — `Find` currently
+  ignores mango indexes entirely, scanning all documents and filtering in
+  memory. `Explain` already selects the best index via `selectMangoIndex`;
+  `Find` should do the same and use it to narrow the query.
 - [ ] **Reduce caching** (`README.md`) — Reduce functions run on-demand with no
   intermediate result caching.
 - [ ] **Mango SQL optimization** (`find.go`) — These selectors work via

@@ -87,7 +87,7 @@ func registerSuiteSQLite() {
 		"DeleteAttachment/RW/Admin/NoDoc.status":         http.StatusNotFound,
 		"Replicate.skip":                                 true,
 		"Find.databases":                                 []string{},
-		"Find/RW/Admin/Warning.warning":                  "",
+		"Find/RW/Admin/Warning.warning":                  "no matching index found, create an index to optimize query time",
 		"GetAttachmentMeta/RW/Admin/foo/NotFound.status": http.StatusNotFound,
 		"DBExists/Admin.databases":                       []string{"chicken"},
 		"DBExists/Admin/chicken.exists":                  false,

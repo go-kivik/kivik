@@ -62,6 +62,7 @@ func TestFind(t *testing.T) {
 			want: []rowResult{
 				{Doc: `{"_id":"foo","_rev":"` + rev + `","foo":"bar"}`},
 			},
+			wantWarning: "no matching index found, create an index to optimize query time",
 		}
 	})
 	tests.Add("limit", func(t *testing.T) any {
@@ -78,6 +79,7 @@ func TestFind(t *testing.T) {
 				{Doc: `{"_id":"foo","_rev":"` + rev + `","foo":"bar"}`},
 				{Doc: `{"_id":"foo2","_rev":"` + rev2 + `","foo":"bar"}`},
 			},
+			wantWarning: "no matching index found, create an index to optimize query time",
 		}
 	})
 	tests.Add("skip", func(t *testing.T) any {
@@ -93,6 +95,7 @@ func TestFind(t *testing.T) {
 			want: []rowResult{
 				{Doc: `{"_id":"foo3","_rev":"` + rev3 + `","foo":"bar"}`},
 			},
+			wantWarning: "no matching index found, create an index to optimize query time",
 		}
 	})
 	tests.Add("fields", func(t *testing.T) any {
@@ -113,6 +116,7 @@ func TestFind(t *testing.T) {
 			want: []rowResult{
 				{Doc: `{"deeply":{"nested":"value","yet":"more"},"foo":"bar"}`},
 			},
+			wantWarning: "no matching index found, create an index to optimize query time",
 		}
 	})
 	tests.Add("_attachments field ", func(t *testing.T) any {
@@ -128,6 +132,7 @@ func TestFind(t *testing.T) {
 			want: []rowResult{
 				{Doc: `{"_attachments":{"foo.txt":{"content_type":"text/plain","digest":"md5-rL0Y20zC+Fzt72VPzMSk2A==","length":3,"revpos":1,"stub":true}}}`},
 			},
+			wantWarning: "no matching index found, create an index to optimize query time",
 		}
 	})
 	tests.Add("_conflicts field ", func(t *testing.T) any {
@@ -389,6 +394,19 @@ func TestFind(t *testing.T) {
 			want: []rowResult{
 				{Doc: `{"_id":"doc1","_rev":"` + rev + `","o'brian":"yes"}`},
 			},
+		}
+	})
+	tests.Add("no matching index emits warning", func(t *testing.T) any {
+		d := newDB(t)
+		rev := d.tPut("foo", map[string]string{"foo": "bar"})
+
+		return test{
+			db:    d,
+			query: `{"selector":{"foo":"bar"}}`,
+			want: []rowResult{
+				{Doc: `{"_id":"foo","_rev":"` + rev + `","foo":"bar"}`},
+			},
+			wantWarning: "no matching index found, create an index to optimize query time",
 		}
 	})
 	tests.Add("default limit of 25 applied when no limit specified", func(t *testing.T) any {

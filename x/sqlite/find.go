@@ -29,6 +29,9 @@ import (
 	"github.com/go-kivik/kivik/v4/x/options"
 )
 
+// warningNoMatchingIndex is emitted when no mango index matches a find query.
+const warningNoMatchingIndex = "no matching index found, create an index to optimize query time"
+
 // allDocsIndex is the fallback index used when no mango index is selected.
 var allDocsIndex = map[string]any{
 	"ddoc": nil,
@@ -293,6 +296,19 @@ func (d *db) Find(ctx context.Context, query any, _ driver.Options) (driver.Rows
 	}
 	if err := json.Unmarshal(input, &raw); err == nil {
 		selector = raw.Selector
+	}
+
+	if warning == "" && vopts.UseIndexDdoc() == "" {
+		var selectorMap map[string]any
+		if err := json.Unmarshal(selector, &selectorMap); err == nil && len(selectorMap) > 0 {
+			idx, err := d.selectMangoIndex(ctx, selectorMap, vopts.SortFields())
+			if err != nil {
+				return nil, err
+			}
+			if idx["name"] == "_all_docs" {
+				warning = warningNoMatchingIndex
+			}
+		}
 	}
 
 	return d.queryBuiltinView(ctx, vopts, selector, sortOrderBy, warning)

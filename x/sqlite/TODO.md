@@ -18,14 +18,6 @@
   query plan.
 - [ ] **Reduce caching** (`README.md`) — Reduce functions run on-demand with no
   intermediate result caching.
-- [ ] **Configurable regex compiler** (`x/mango/`) — `$regex` uses Go's
-  `regexp` (RE2), which doesn't support PCRE features (lookaheads,
-  backreferences) that CouchDB's Erlang `re` module does. Define a
-  `RegexpCompiler` interface and accept it as a client option so users can
-  provide a PCRE implementation (e.g. via a separate `kivik-pcre` CGo
-  module) without kivik itself depending on CGo. SQL translation of
-  `$regex` is not worthwhile for SQLite (in-process, no index benefit) but
-  will matter for a future pgx driver where PostgreSQL has native regex.
 - [ ] **Mango SQL optimization** (`find.go`) — These selectors could be
   translated to SQL for index support but aren't yet: `$size`, `$type`.
   The remaining operators (`$nin`, `$mod`, `$all`, `$elemMatch`,

@@ -417,19 +417,18 @@ func selectorToSQL(selector json.RawMessage, argOffset int) ([]string, []any, bo
 		switch {
 		case key == "$and":
 			c, a, ok := combineSelectors(val, " AND ", false, argOffset+len(args))
-			conds = append(conds, c...)
-			args = append(args, a...)
-			if !ok {
-				complete = false
-			}
+			appendCombined(&conds, c, &args, a, &complete, ok)
 
 		case key == "$or":
 			c, a, ok := combineSelectors(val, " OR ", true, argOffset+len(args))
-			conds = append(conds, c...)
-			args = append(args, a...)
-			if !ok {
-				complete = false
+			appendCombined(&conds, c, &args, a, &complete, ok)
+
+		case key == "$nor":
+			c, a, ok := combineSelectors(val, " OR ", true, argOffset+len(args))
+			for i, cond := range c {
+				c[i] = "NOT " + cond
 			}
+			appendCombined(&conds, c, &args, a, &complete, ok)
 
 		case strings.HasPrefix(key, "$"):
 			continue
@@ -450,6 +449,16 @@ func selectorToSQL(selector json.RawMessage, argOffset int) ([]string, []any, bo
 		return nil, nil, complete
 	}
 	return conds, args, complete
+}
+
+// appendCombined appends combined selector results to the conditions and arguments slices,
+// and updates the complete flag if the combination was incomplete.
+func appendCombined(conds *[]string, c []string, args *[]any, a []any, complete *bool, ok bool) {
+	*conds = append(*conds, c...)
+	*args = append(*args, a...)
+	if !ok {
+		*complete = false
+	}
 }
 
 // combineSelectors unmarshals val as an array of sub-selectors, converts each

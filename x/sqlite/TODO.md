@@ -21,7 +21,7 @@
 - [ ] **Reduce caching** (`README.md`) — Reduce functions run on-demand with no
   intermediate result caching.
 - [ ] **Mango SQL optimization** (`find.go`) — These selectors work via
-  in-memory fallback but aren't translated to SQL: `$nor`, `$nin`,
+  in-memory fallback but aren't translated to SQL: `$nin`,
   `$regex`, `$mod`, `$all`, `$elemMatch`, `$type`, `$size`, `$allMatch`,
   `$keyMapMatch`.
 - [ ] **Filter in Go instead of SQL** (`query.go:569`) — Local and design

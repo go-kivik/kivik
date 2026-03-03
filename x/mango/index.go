@@ -14,7 +14,10 @@ package mango
 
 import (
 	"encoding/json"
+	"net/http"
 	"strings"
+
+	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
 // FieldToJSONPath converts a Mango field name to a JSON path expression using
@@ -34,8 +37,8 @@ func FieldToJSONPath(field string) string {
 }
 
 // ExtractIndexFields parses a Mango index definition and returns the ordered
-// field names. Direction is ignored since SQLite can traverse B-tree indexes in
-// either direction.
+// field names. It returns an HTTP 400 error if the definition contains fields
+// with both ascending and descending directions.
 func ExtractIndexFields(indexDef []byte) ([]string, error) {
 	var def struct {
 		Fields []any `json:"fields"`
@@ -44,14 +47,22 @@ func ExtractIndexFields(indexDef []byte) ([]string, error) {
 		return nil, err
 	}
 
+	var direction string
 	fields := make([]string, 0, len(def.Fields))
 	for _, f := range def.Fields {
 		switch v := f.(type) {
 		case string:
 			fields = append(fields, v)
 		case map[string]any:
-			for k := range v {
+			for k, val := range v {
 				fields = append(fields, k)
+				if d, _ := val.(string); d != "" {
+					if direction == "" {
+						direction = d
+					} else if d != direction {
+						return nil, &internal.Error{Status: http.StatusBadRequest, Message: "Sorts currently only support a single direction for all fields"}
+					}
+				}
 			}
 		}
 	}

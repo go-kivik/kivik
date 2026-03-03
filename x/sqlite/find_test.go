@@ -1045,9 +1045,9 @@ func Test_selectorToSQL(t *testing.T) {
 	tests.Add("$in", test{
 		selector:     json.RawMessage(`{"status": {"$in": ["active", "pending"]}}`),
 		argOffset:    0,
-		wantConds:    []string{`json_extract(doc.doc, '$."status"') IN ($1, $2)`},
-		wantArgs:     []any{"active", "pending"},
-		wantComplete: true,
+		wantConds:    nil,
+		wantArgs:     nil,
+		wantComplete: false,
 	})
 	tests.Add("argOffset", test{
 		selector:     json.RawMessage(`{"name": "Bob"}`),

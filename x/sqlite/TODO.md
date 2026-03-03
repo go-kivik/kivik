@@ -9,21 +9,28 @@
 
 - [ ] **Find cross-type comparison correctness** (`find.go`) —
   `selectorToSQL` translates comparison operators (`$lt`, `$lte`, `$gt`,
-  `$gte`, `$eq`, `$in`) to SQL, but SQLite doesn't support CouchDB's
-  cross-type ordering (null < bool < number < string < array < object).
-  `$in` also uses SQL `IN` which doesn't match CouchDB's deep equality
-  for non-scalar or mixed-type values. When `selectorComplete=true`, the
-  in-memory filter is skipped, producing incorrect results for these
-  queries.
+  `$gte`, `$eq`) to SQL, but SQLite doesn't support CouchDB's cross-type
+  ordering (null < bool < number < string < array < object). When
+  `selectorComplete=true`, the in-memory filter is skipped, producing
+  incorrect results for cross-type queries.
 - [ ] **`use_index` doesn't influence query execution** (`find.go`) — The hint
   is validated and triggers a warning if missing, but doesn't guide the
   query plan.
 - [ ] **Reduce caching** (`README.md`) — Reduce functions run on-demand with no
   intermediate result caching.
-- [ ] **Mango SQL optimization** (`find.go`) — These selectors work via
-  in-memory fallback but aren't translated to SQL: `$nin`,
-  `$regex`, `$mod`, `$all`, `$elemMatch`, `$type`, `$size`, `$allMatch`,
-  `$keyMapMatch`.
+- [ ] **Configurable regex compiler** (`x/mango/`) — `$regex` uses Go's
+  `regexp` (RE2), which doesn't support PCRE features (lookaheads,
+  backreferences) that CouchDB's Erlang `re` module does. Define a
+  `RegexpCompiler` interface and accept it as a client option so users can
+  provide a PCRE implementation (e.g. via a separate `kivik-pcre` CGo
+  module) without kivik itself depending on CGo. SQL translation of
+  `$regex` is not worthwhile for SQLite (in-process, no index benefit) but
+  will matter for a future pgx driver where PostgreSQL has native regex.
+- [ ] **Mango SQL optimization** (`find.go`) — These selectors could be
+  translated to SQL for index support but aren't yet: `$size`, `$type`.
+  The remaining operators (`$nin`, `$mod`, `$all`, `$elemMatch`,
+  `$allMatch`, `$keyMapMatch`) aren't indexable in SQLite and are handled
+  adequately by the in-memory fallback.
 - [ ] **Filter in Go instead of SQL** (`query.go:569`) — Local and design
   document filtering during view updates is done in Go after fetching rows,
   rather than in the SQL query.

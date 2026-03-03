@@ -524,17 +524,6 @@ func fieldCondition(jsonPath string, val json.RawMessage, argOffset int) (string
 			}
 			return expr + " IS NULL", nil
 
-		case "$in":
-			var values []json.RawMessage
-			if err := json.Unmarshal(opVal, &values); err != nil {
-				return "", nil
-			}
-			args := make([]any, len(values))
-			for i, v := range values {
-				args[i] = decodeValue(v)
-			}
-			return expr + " IN (" + placeholders(argOffset+1, len(values)) + ")", args
-
 		case "$gt", "$gte", "$lt", "$lte":
 			return inequalityCondition(expr, jsonPath, op, opVal, argOffset)
 

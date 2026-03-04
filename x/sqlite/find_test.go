@@ -27,16 +27,18 @@ import (
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/int/mock"
+	"github.com/go-kivik/kivik/v4/x/options"
 )
 
 func TestFind(t *testing.T) {
 	t.Parallel()
 	type test struct {
-		db         *testDB
-		query      string
-		want       []rowResult
-		wantStatus int
-		wantErr    string
+		db          *testDB
+		query       string
+		want        []rowResult
+		wantStatus  int
+		wantErr     string
+		wantWarning string
 	}
 
 	tests := testy.NewTable()
@@ -60,6 +62,7 @@ func TestFind(t *testing.T) {
 			want: []rowResult{
 				{Doc: `{"_id":"foo","_rev":"` + rev + `","foo":"bar"}`},
 			},
+			wantWarning: "no matching index found, create an index to optimize query time",
 		}
 	})
 	tests.Add("limit", func(t *testing.T) any {
@@ -76,6 +79,7 @@ func TestFind(t *testing.T) {
 				{Doc: `{"_id":"foo","_rev":"` + rev + `","foo":"bar"}`},
 				{Doc: `{"_id":"foo2","_rev":"` + rev2 + `","foo":"bar"}`},
 			},
+			wantWarning: "no matching index found, create an index to optimize query time",
 		}
 	})
 	tests.Add("skip", func(t *testing.T) any {
@@ -91,6 +95,7 @@ func TestFind(t *testing.T) {
 			want: []rowResult{
 				{Doc: `{"_id":"foo3","_rev":"` + rev3 + `","foo":"bar"}`},
 			},
+			wantWarning: "no matching index found, create an index to optimize query time",
 		}
 	})
 	tests.Add("fields", func(t *testing.T) any {
@@ -111,6 +116,7 @@ func TestFind(t *testing.T) {
 			want: []rowResult{
 				{Doc: `{"deeply":{"nested":"value","yet":"more"},"foo":"bar"}`},
 			},
+			wantWarning: "no matching index found, create an index to optimize query time",
 		}
 	})
 	tests.Add("_attachments field ", func(t *testing.T) any {
@@ -126,6 +132,7 @@ func TestFind(t *testing.T) {
 			want: []rowResult{
 				{Doc: `{"_attachments":{"foo.txt":{"content_type":"text/plain","digest":"md5-rL0Y20zC+Fzt72VPzMSk2A==","length":3,"revpos":1,"stub":true}}}`},
 			},
+			wantWarning: "no matching index found, create an index to optimize query time",
 		}
 	})
 	tests.Add("_conflicts field ", func(t *testing.T) any {
@@ -308,10 +315,18 @@ func TestFind(t *testing.T) {
 			},
 		}
 	})
-	tests.Add("use_index, not found", test{
-		query:      `{"selector":{},"use_index":"_design/nonexistent"}`,
-		wantStatus: http.StatusBadRequest,
-		wantErr:    `index "_design/nonexistent" not found`,
+	tests.Add("use_index, not found", func(t *testing.T) any {
+		d := newDB(t)
+		rev := d.tPut("foo", map[string]string{"foo": "bar"})
+
+		return test{
+			db:    d,
+			query: `{"selector":{},"use_index":"_design/nonexistent"}`,
+			want: []rowResult{
+				{Doc: `{"_id":"foo","_rev":"` + rev + `","foo":"bar"}`},
+			},
+			wantWarning: `_design/nonexistent was not used because it does not contain a valid index for this query.`,
+		}
 	})
 	tests.Add("use_index, array form", func(t *testing.T) any {
 		d := newDB(t)
@@ -381,6 +396,35 @@ func TestFind(t *testing.T) {
 			},
 		}
 	})
+	tests.Add("no matching index emits warning", func(t *testing.T) any {
+		d := newDB(t)
+		rev := d.tPut("foo", map[string]string{"foo": "bar"})
+
+		return test{
+			db:    d,
+			query: `{"selector":{"foo":"bar"}}`,
+			want: []rowResult{
+				{Doc: `{"_id":"foo","_rev":"` + rev + `","foo":"bar"}`},
+			},
+			wantWarning: "no matching index found, create an index to optimize query time",
+		}
+	})
+	tests.Add("default limit of 25 applied when no limit specified", func(t *testing.T) any {
+		d := newDB(t)
+		want := make([]rowResult, 0, 25)
+		for i := 0; i < 30; i++ {
+			id := fmt.Sprintf("doc%03d", i)
+			rev := d.tPut(id, map[string]any{"n": i})
+			if i < 25 {
+				want = append(want, rowResult{Doc: fmt.Sprintf(`{"_id":%q,"_rev":%q,"n":%d}`, id, rev, i)})
+			}
+		}
+		return test{
+			db:    d,
+			query: `{"selector":{}}`,
+			want:  want,
+		}
+	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()
@@ -399,6 +443,9 @@ func TestFind(t *testing.T) {
 			return
 		}
 		checkRows(t, rows, tt.want)
+		if d := cmp.Diff(tt.wantWarning, rows.(driver.RowsWarner).Warning()); d != "" {
+			t.Errorf("Unexpected warning: %s", d)
+		}
 	})
 }
 
@@ -462,6 +509,491 @@ func TestFindUsesIndex(t *testing.T) {
 	}
 }
 
+func TestExplain(t *testing.T) {
+	t.Parallel()
+	type test struct {
+		db      *testDB
+		query   string
+		want    *driver.QueryPlan
+		wantErr string
+	}
+
+	tests := testy.NewTable()
+	tests.Add("simple selector uses _all_docs index", func(t *testing.T) any {
+		d := newDB(t)
+		return test{
+			db:    d,
+			query: `{"selector":{"foo":"bar"}}`,
+			want: &driver.QueryPlan{
+				DBName:   "test",
+				Selector: map[string]any{"foo": "bar"},
+				Limit:    25,
+				Index: map[string]any{
+					"ddoc": nil,
+					"name": "_all_docs",
+					"type": "special",
+					"def":  map[string]any{"fields": []any{map[string]any{"_id": "asc"}}},
+				},
+				Options: map[string]any{
+					"conflicts":       false,
+					"bookmark":        "nil",
+					"sort":            map[string]any{},
+					"fields":          []any{},
+					"limit":           int64(25),
+					"skip":            int64(0),
+					"r":               1,
+					"update":          true,
+					"stable":          false,
+					"stale":           false,
+					"execution_stats": false,
+					"allow_fallback":  true,
+					"partition":       "",
+					"use_index":       []any{},
+				},
+			},
+		}
+	})
+
+	tests.Add("selector covered by mango index", func(t *testing.T) any {
+		d := newDB(t)
+		err := d.CreateIndex(context.Background(), "_design/idx", "idx", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		return test{
+			db:    d,
+			query: `{"selector":{"name":"foo"}}`,
+			want: &driver.QueryPlan{
+				DBName:   "test",
+				Selector: map[string]any{"name": "foo"},
+				Limit:    25,
+				Index: map[string]any{
+					"ddoc": "_design/idx",
+					"name": "idx",
+					"type": "json",
+					"def":  map[string]any{"fields": []any{map[string]any{"name": "asc"}}},
+				},
+				Options: map[string]any{
+					"conflicts":       false,
+					"bookmark":        "nil",
+					"sort":            map[string]any{},
+					"fields":          []any{},
+					"limit":           int64(25),
+					"skip":            int64(0),
+					"r":               1,
+					"update":          true,
+					"stable":          false,
+					"stale":           false,
+					"execution_stats": false,
+					"allow_fallback":  true,
+					"partition":       "",
+					"use_index":       []any{},
+				},
+			},
+		}
+	})
+
+	tests.Add("sort selects matching index", func(t *testing.T) any {
+		d := newDB(t)
+		err := d.CreateIndex(context.Background(), "_design/idx", "idx", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		return test{
+			db:    d,
+			query: `{"selector":{},"sort":["name"]}`,
+			want: &driver.QueryPlan{
+				DBName:   "test",
+				Selector: map[string]any{},
+				Limit:    25,
+				Index: map[string]any{
+					"ddoc": "_design/idx",
+					"name": "idx",
+					"type": "json",
+					"def":  map[string]any{"fields": []any{map[string]any{"name": "asc"}}},
+				},
+				Options: map[string]any{
+					"conflicts":       false,
+					"bookmark":        "nil",
+					"sort":            map[string]string{"name": "asc"},
+					"fields":          []any{},
+					"limit":           int64(25),
+					"skip":            int64(0),
+					"r":               1,
+					"update":          true,
+					"stable":          false,
+					"stale":           false,
+					"execution_stats": false,
+					"allow_fallback":  true,
+					"partition":       "",
+					"use_index":       []any{},
+				},
+			},
+		}
+	})
+
+	tests.Add("skip and fields are populated", test{
+		query: `{"selector":{}, "skip":5, "fields":["name","age"]}`,
+		want: &driver.QueryPlan{
+			DBName:   "test",
+			Selector: map[string]any{},
+			Limit:    25,
+			Skip:     5,
+			Fields:   []any{"name", "age"},
+			Index: map[string]any{
+				"ddoc": nil,
+				"name": "_all_docs",
+				"type": "special",
+				"def":  map[string]any{"fields": []any{map[string]any{"_id": "asc"}}},
+			},
+			Options: map[string]any{
+				"conflicts":       false,
+				"bookmark":        "nil",
+				"sort":            map[string]any{},
+				"fields":          []any{"name", "age"},
+				"limit":           int64(25),
+				"skip":            int64(5),
+				"r":               1,
+				"update":          true,
+				"stable":          false,
+				"stale":           false,
+				"execution_stats": false,
+				"allow_fallback":  true,
+				"partition":       "",
+				"use_index":       []any{},
+			},
+		},
+	})
+
+	tests.Add("use_index selects specified index", func(t *testing.T) any {
+		d := newDB(t)
+		// Create two indexes; auto-selection (without use_index) would pick the
+		// first one (_design/age/byAge) because coversSort returns true for empty
+		// sort fields. use_index must override and select the second one.
+		err := d.CreateIndex(context.Background(), "_design/age", "byAge", json.RawMessage(`{"fields":["age"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		err = d.CreateIndex(context.Background(), "_design/idx", "idx", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		return test{
+			db:    d,
+			query: `{"selector":{},"use_index":["_design/idx","idx"]}`,
+			want: &driver.QueryPlan{
+				DBName:   "test",
+				Selector: map[string]any{},
+				Limit:    25,
+				Index: map[string]any{
+					"ddoc": "_design/idx",
+					"name": "idx",
+					"type": "json",
+					"def":  map[string]any{"fields": []any{map[string]any{"name": "asc"}}},
+				},
+				Options: map[string]any{
+					"conflicts":       false,
+					"bookmark":        "nil",
+					"sort":            map[string]any{},
+					"fields":          []any{},
+					"limit":           int64(25),
+					"skip":            int64(0),
+					"r":               1,
+					"update":          true,
+					"stable":          false,
+					"stale":           false,
+					"execution_stats": false,
+					"allow_fallback":  true,
+					"partition":       "",
+					"use_index":       []any{"_design/idx", "idx"},
+				},
+			},
+		}
+	})
+
+	tests.Add("sort field populated in Options", func(t *testing.T) any {
+		d := newDB(t)
+		err := d.CreateIndex(context.Background(), "_design/idx", "byName", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		return test{
+			db:    d,
+			query: `{"selector":{},"sort":["name"]}`,
+			want: &driver.QueryPlan{
+				DBName:   "test",
+				Selector: map[string]any{},
+				Limit:    25,
+				Index: map[string]any{
+					"ddoc": "_design/idx",
+					"name": "byName",
+					"type": "json",
+					"def":  map[string]any{"fields": []any{map[string]any{"name": "asc"}}},
+				},
+				Options: map[string]any{
+					"conflicts":       false,
+					"bookmark":        "nil",
+					"sort":            map[string]string{"name": "asc"},
+					"fields":          []any{},
+					"limit":           int64(25),
+					"skip":            int64(0),
+					"r":               1,
+					"update":          true,
+					"stable":          false,
+					"stale":           false,
+					"execution_stats": false,
+					"allow_fallback":  true,
+					"partition":       "",
+					"use_index":       []any{},
+				},
+			},
+		}
+	})
+
+	tests.Add("options map is populated", test{
+		query: `{"selector":{},"conflicts":true,"skip":3}`,
+		want: &driver.QueryPlan{
+			DBName:   "test",
+			Selector: map[string]any{},
+			Limit:    25,
+			Skip:     3,
+			Index: map[string]any{
+				"ddoc": nil,
+				"name": "_all_docs",
+				"type": "special",
+				"def":  map[string]any{"fields": []any{map[string]any{"_id": "asc"}}},
+			},
+			Options: map[string]any{
+				"conflicts":       true,
+				"bookmark":        "nil",
+				"sort":            map[string]any{},
+				"fields":          []any{},
+				"limit":           int64(25),
+				"skip":            int64(3),
+				"r":               1,
+				"update":          true,
+				"stable":          false,
+				"stale":           false,
+				"execution_stats": false,
+				"allow_fallback":  true,
+				"partition":       "",
+				"use_index":       []any{},
+			},
+		},
+	})
+
+	tests.Add("prefers index with fewer fields", func(t *testing.T) any {
+		d := newDB(t)
+		err := d.CreateIndex(context.Background(), "_design/idx_name_age", "idx_name_age", json.RawMessage(`{"fields":["name","age"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		err = d.CreateIndex(context.Background(), "_design/idx_name", "idx_name", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		return test{
+			db:    d,
+			query: `{"selector":{"name":"foo"}}`,
+			want: &driver.QueryPlan{
+				DBName:   "test",
+				Selector: map[string]any{"name": "foo"},
+				Limit:    25,
+				Index: map[string]any{
+					"ddoc": "_design/idx_name",
+					"name": "idx_name",
+					"type": "json",
+					"def":  map[string]any{"fields": []any{map[string]any{"name": "asc"}}},
+				},
+				Options: map[string]any{
+					"conflicts":       false,
+					"bookmark":        "nil",
+					"sort":            map[string]any{},
+					"fields":          []any{},
+					"limit":           int64(25),
+					"skip":            int64(0),
+					"r":               1,
+					"update":          true,
+					"stable":          false,
+					"stale":           false,
+					"execution_stats": false,
+					"allow_fallback":  true,
+					"partition":       "",
+					"use_index":       []any{},
+				},
+			},
+		}
+	})
+
+	tests.Add("partial index coverage selects best partial match", func(t *testing.T) any {
+		d := newDB(t)
+		err := d.CreateIndex(context.Background(), "_design/idx", "idx", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		return test{
+			db:    d,
+			query: `{"selector":{"name":"foo","age":5}}`,
+			want: &driver.QueryPlan{
+				DBName:   "test",
+				Selector: map[string]any{"name": "foo", "age": float64(5)},
+				Limit:    25,
+				Index: map[string]any{
+					"ddoc": "_design/idx",
+					"name": "idx",
+					"type": "json",
+					"def":  map[string]any{"fields": []any{map[string]any{"name": "asc"}}},
+				},
+				Options: map[string]any{
+					"conflicts":       false,
+					"bookmark":        "nil",
+					"sort":            map[string]any{},
+					"fields":          []any{},
+					"limit":           int64(25),
+					"skip":            int64(0),
+					"r":               1,
+					"update":          true,
+					"stable":          false,
+					"stale":           false,
+					"execution_stats": false,
+					"allow_fallback":  true,
+					"partition":       "",
+					"use_index":       []any{},
+				},
+			},
+		}
+	})
+	tests.Add("prefers index with more selector field overlap", func(t *testing.T) any {
+		d := newDB(t)
+		err := d.CreateIndex(context.Background(), "_design/idx_name", "idx_name", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		err = d.CreateIndex(context.Background(), "_design/idx_name_age", "idx_name_age", json.RawMessage(`{"fields":["name","age"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		return test{
+			db:    d,
+			query: `{"selector":{"name":"foo","age":5,"city":"bar"}}`,
+			want: &driver.QueryPlan{
+				DBName:   "test",
+				Selector: map[string]any{"name": "foo", "age": float64(5), "city": "bar"},
+				Limit:    25,
+				Index: map[string]any{
+					"ddoc": "_design/idx_name_age",
+					"name": "idx_name_age",
+					"type": "json",
+					"def":  map[string]any{"fields": []any{map[string]any{"name": "asc"}, map[string]any{"age": "asc"}}},
+				},
+				Options: map[string]any{
+					"conflicts":       false,
+					"bookmark":        "nil",
+					"sort":            map[string]any{},
+					"fields":          []any{},
+					"limit":           int64(25),
+					"skip":            int64(0),
+					"r":               1,
+					"update":          true,
+					"stable":          false,
+					"stale":           false,
+					"execution_stats": false,
+					"allow_fallback":  true,
+					"partition":       "",
+					"use_index":       []any{},
+				},
+			},
+		}
+	})
+
+	tests.Add("alphabetical tiebreaker selects first ddoc name", func(t *testing.T) any {
+		d := newDB(t)
+		err := d.CreateIndex(context.Background(), "_design/beta", "beta", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		err = d.CreateIndex(context.Background(), "_design/alpha", "alpha", json.RawMessage(`{"fields":["name"]}`), mock.NilOption)
+		if err != nil {
+			t.Fatalf("CreateIndex failed: %s", err)
+		}
+		return test{
+			db:    d,
+			query: `{"selector":{"name":"foo"}}`,
+			want: &driver.QueryPlan{
+				DBName:   "test",
+				Selector: map[string]any{"name": "foo"},
+				Limit:    25,
+				Index: map[string]any{
+					"ddoc": "_design/alpha",
+					"name": "alpha",
+					"type": "json",
+					"def":  map[string]any{"fields": []any{map[string]any{"name": "asc"}}},
+				},
+				Options: map[string]any{
+					"conflicts":       false,
+					"bookmark":        "nil",
+					"sort":            map[string]any{},
+					"fields":          []any{},
+					"limit":           int64(25),
+					"skip":            int64(0),
+					"r":               1,
+					"update":          true,
+					"stable":          false,
+					"stale":           false,
+					"execution_stats": false,
+					"allow_fallback":  true,
+					"partition":       "",
+					"use_index":       []any{},
+				},
+			},
+		}
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		t.Parallel()
+		db := tt.db
+		if db == nil {
+			db = newDB(t)
+		}
+		got, err := db.Explain(context.Background(), json.RawMessage(tt.query), mock.NilOption)
+		if !testy.ErrorMatchesRE(tt.wantErr, err) {
+			t.Errorf("Unexpected error: %s", err)
+		}
+		if err != nil {
+			return
+		}
+		if d := cmp.Diff(tt.want, got); d != "" {
+			t.Errorf("Unexpected result: %s", d)
+		}
+	})
+}
+
+func Test_coversSort(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		indexFields []string
+		sortFields  []options.SortField
+		want        bool
+	}
+
+	tests := testy.NewTable()
+
+	tests.Add("empty sort fields returns false", test{
+		indexFields: []string{"name"},
+		sortFields:  nil,
+		want:        false,
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		t.Parallel()
+		got := coversSort(tt.indexFields, tt.sortFields)
+		if got != tt.want {
+			t.Errorf("coversSort() = %v, want %v", got, tt.want)
+		}
+	})
+}
+
 func Test_selectorToSQL(t *testing.T) {
 	t.Parallel()
 
@@ -513,9 +1045,9 @@ func Test_selectorToSQL(t *testing.T) {
 	tests.Add("$in", test{
 		selector:     json.RawMessage(`{"status": {"$in": ["active", "pending"]}}`),
 		argOffset:    0,
-		wantConds:    []string{`json_extract(doc.doc, '$."status"') IN ($1, $2)`},
-		wantArgs:     []any{"active", "pending"},
-		wantComplete: true,
+		wantConds:    nil,
+		wantArgs:     nil,
+		wantComplete: false,
 	})
 	tests.Add("argOffset", test{
 		selector:     json.RawMessage(`{"name": "Bob"}`),
@@ -571,6 +1103,20 @@ func Test_selectorToSQL(t *testing.T) {
 		argOffset:    0,
 		wantConds:    nil,
 		wantArgs:     nil,
+		wantComplete: true,
+	})
+	tests.Add("$not", test{
+		selector:     json.RawMessage(`{"age": {"$not": {"$eq": 21}}}`),
+		argOffset:    0,
+		wantConds:    []string{`NOT (json_extract(doc.doc, '$."age"') = $1)`},
+		wantArgs:     []any{float64(21)},
+		wantComplete: true,
+	})
+	tests.Add("$nor", test{
+		selector:     json.RawMessage(`{"$nor": [{"name": "Bob"}, {"name": "Alice"}]}`),
+		argOffset:    0,
+		wantConds:    []string{`NOT (json_extract(doc.doc, '$."name"') = $1 OR json_extract(doc.doc, '$."name"') = $2)`},
+		wantArgs:     []any{"Bob", "Alice"},
 		wantComplete: true,
 	})
 	tests.Run(t, func(t *testing.T, tt test) {

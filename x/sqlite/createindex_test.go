@@ -43,6 +43,12 @@ func TestCreateIndex(t *testing.T) {
 		name:  "my-index",
 		index: json.RawMessage(`{"fields":["name"]}`),
 	})
+	tests.Add("mixed sort directions", test{
+		ddoc:    "_design/mixed",
+		name:    "mixed",
+		index:   json.RawMessage(`{"fields":[{"name":"asc"},{"age":"desc"}]}`),
+		wantErr: "Sorts currently only support a single direction for all fields",
+	})
 	tests.Add("creates a real SQLite index", func(t *testing.T) any {
 		db := newDB(t)
 		return test{

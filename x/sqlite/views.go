@@ -61,6 +61,7 @@ func (d *db) queryBuiltinView(
 	vopts *options.ViewOptions,
 	selector json.RawMessage,
 	sortOrderBy string,
+	warning string,
 ) (driver.Rows, error) {
 	args := []any{vopts.IncludeDocs(), vopts.Conflicts(), vopts.UpdateSeq(), vopts.Attachments(), vopts.Bookmark()}
 
@@ -204,6 +205,7 @@ func (d *db) queryBuiltinView(
 		findLimit:        vopts.FindLimit(),
 		findSkip:         vopts.FindSkip(),
 		fields:           vopts.Fields(),
+		warning:          warning,
 	}, nil
 }
 
@@ -278,9 +280,18 @@ type rows struct {
 
 	done     bool
 	bookmark string
+	warning  string
 }
 
-var _ driver.Rows = (*rows)(nil)
+var (
+	_ driver.Rows       = (*rows)(nil)
+	_ driver.RowsWarner = (*rows)(nil)
+)
+
+// Warning returns any warning associated with the query result.
+func (r *rows) Warning() string {
+	return r.warning
+}
 
 func (r *rows) Next(row *driver.Row) error {
 	var (

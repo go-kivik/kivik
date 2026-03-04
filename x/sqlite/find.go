@@ -14,9 +14,12 @@ package sqlite
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"sort"
 	"strings"
 
@@ -25,6 +28,239 @@ import (
 	"github.com/go-kivik/kivik/v4/x/mango"
 	"github.com/go-kivik/kivik/v4/x/options"
 )
+
+// warningNoMatchingIndex is emitted when no mango index matches a find query.
+const warningNoMatchingIndex = "no matching index found, create an index to optimize query time"
+
+// allDocsIndex is the fallback index used when no mango index is selected.
+var allDocsIndex = map[string]any{
+	"ddoc": nil,
+	"name": "_all_docs",
+	"type": "special",
+	"def": map[string]any{
+		"fields": []any{map[string]any{"_id": "asc"}},
+	},
+}
+
+// Explain returns the query plan for a given _find query without executing it.
+func (d *db) Explain(ctx context.Context, query any, _ driver.Options) (*driver.QueryPlan, error) {
+	vopts, err := options.FindOptions(query)
+	if err != nil {
+		return nil, err
+	}
+
+	var raw struct {
+		Selector map[string]any `json:"selector"`
+	}
+	if err := json.Unmarshal(query.(json.RawMessage), &raw); err != nil {
+		return nil, err
+	}
+
+	limit := vopts.FindLimit()
+
+	var index map[string]any
+	if ddoc := vopts.UseIndexDdoc(); ddoc != "" {
+		index, err = d.lookupMangoIndex(ctx, ddoc, vopts.UseIndexName())
+		if err != nil {
+			return nil, err
+		}
+	}
+	if index == nil {
+		index, err = d.selectMangoIndex(ctx, raw.Selector, vopts.SortFields())
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var fields []any
+	if f := vopts.Fields(); len(f) > 0 {
+		fields = make([]any, 0, len(f))
+		for _, f := range f {
+			fields = append(fields, f)
+		}
+	}
+
+	bookmark := vopts.Bookmark()
+	if bookmark == "" {
+		bookmark = "nil"
+	}
+
+	var fieldsOpt any
+	if len(fields) == 0 {
+		fieldsOpt = []any{}
+	} else {
+		fieldsOpt = fields
+	}
+
+	var useIndex []any
+	ddoc := vopts.UseIndexDdoc()
+	name := vopts.UseIndexName()
+	switch {
+	case ddoc == "":
+		useIndex = []any{}
+	case name == "":
+		useIndex = []any{ddoc}
+	default:
+		useIndex = []any{ddoc, name}
+	}
+
+	sortOpt := any(map[string]any{})
+	if sf := vopts.SortFields(); len(sf) > 0 {
+		sortMap := make(map[string]string, len(sf))
+		for _, f := range sf {
+			dir := "asc"
+			if f.Desc {
+				dir = "desc"
+			}
+			sortMap[f.Field] = dir
+		}
+		sortOpt = sortMap
+	}
+
+	opts := map[string]any{
+		"conflicts":       vopts.Conflicts(),
+		"bookmark":        bookmark,
+		"sort":            sortOpt,
+		"fields":          fieldsOpt,
+		"limit":           limit,
+		"skip":            vopts.FindSkip(),
+		"r":               1,
+		"update":          true,
+		"stable":          false,
+		"stale":           false,
+		"execution_stats": false,
+		"allow_fallback":  true,
+		"partition":       "",
+		"use_index":       useIndex,
+	}
+
+	return &driver.QueryPlan{
+		DBName:   d.name,
+		Selector: raw.Selector,
+		Limit:    limit,
+		Skip:     vopts.FindSkip(),
+		Fields:   fields,
+		Index:    index,
+		Options:  opts,
+	}, nil
+}
+
+type indexCandidate struct {
+	index      map[string]any
+	fieldCount int
+	overlap    int
+	ddoc       string
+}
+
+func (c indexCandidate) cmp(other indexCandidate) int {
+	if c.overlap != other.overlap {
+		return other.overlap - c.overlap
+	}
+	if c.fieldCount != other.fieldCount {
+		return c.fieldCount - other.fieldCount
+	}
+	return strings.Compare(c.ddoc, other.ddoc)
+}
+
+// selectMangoIndex queries the MangoIndexes table and returns the best matching
+// index whose fields cover at least one selector key or all sort fields. When
+// multiple indexes match, they are ranked by fewest fields, then alphabetical
+// ddoc name. Falls back to allDocsIndex when no match is found.
+func (d *db) selectMangoIndex(ctx context.Context, selector map[string]any, sortFields []options.SortField) (map[string]any, error) {
+	rows, err := d.db.QueryContext(ctx, d.query(`SELECT ddoc, name, index_def FROM {{ .MangoIndexes }}`))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var candidates []indexCandidate
+	for rows.Next() {
+		var ddoc, name, indexDef string
+		if err := rows.Scan(&ddoc, &name, &indexDef); err != nil {
+			return nil, err
+		}
+		idxFields, err := mango.ExtractIndexFields([]byte(indexDef))
+		if err != nil {
+			continue
+		}
+		overlap := coversSelector(idxFields, selector)
+		if overlap == 0 && !coversSort(idxFields, sortFields) {
+			continue
+		}
+		index, err := buildMangoIndexMap(ddoc, name, indexDef)
+		if err != nil {
+			return nil, err
+		}
+		candidates = append(candidates, indexCandidate{
+			index:      index,
+			fieldCount: len(idxFields),
+			overlap:    overlap,
+			ddoc:       ddoc,
+		})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if len(candidates) == 0 {
+		return allDocsIndex, nil
+	}
+	slices.SortFunc(candidates, indexCandidate.cmp)
+	return candidates[0].index, nil
+}
+
+// lookupMangoIndex retrieves a specific index from the MangoIndexes table by ddoc
+// and optionally by name. Returns nil if no matching index is found.
+func (d *db) lookupMangoIndex(ctx context.Context, ddoc, name string) (map[string]any, error) {
+	where, args := mangoIndexWhere(ddoc, name)
+	q := d.query(`SELECT ddoc, name, index_def FROM {{ .MangoIndexes }} WHERE `) + where
+	row := d.db.QueryRowContext(ctx, q, args...)
+	var rowDdoc, rowName, indexDef string
+	if err := row.Scan(&rowDdoc, &rowName, &indexDef); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return buildMangoIndexMap(rowDdoc, rowName, indexDef)
+}
+
+// buildMangoIndexMap builds a map representing a Mango index result from its
+// components (ddoc, name, and index definition JSON).
+func buildMangoIndexMap(ddoc, name, indexDef string) (map[string]any, error) {
+	normalizedFields, err := mango.NormalizeIndexFields(indexDef)
+	if err != nil {
+		return nil, err
+	}
+	anyFields := mapFieldsToAny(normalizedFields)
+	return map[string]any{
+		"ddoc": ddoc,
+		"name": name,
+		"type": "json",
+		"def":  map[string]any{"fields": anyFields},
+	}, nil
+}
+
+// coversSelector returns the number of index fields that are top-level
+// non-operator selector keys. Returns 0 if selector is empty or no overlap.
+func coversSelector(indexFields []string, selector map[string]any) int {
+	if len(selector) == 0 {
+		return 0
+	}
+	fieldSet := make(map[string]struct{}, len(indexFields))
+	for _, f := range indexFields {
+		fieldSet[f] = struct{}{}
+	}
+	count := 0
+	for key := range selector {
+		if strings.HasPrefix(key, "$") {
+			continue
+		}
+		if _, ok := fieldSet[key]; ok {
+			count++
+		}
+	}
+	return count
+}
 
 func (d *db) Find(ctx context.Context, query any, _ driver.Options) (driver.Rows, error) {
 	vopts, err := options.FindOptions(query)
@@ -40,6 +276,7 @@ func (d *db) Find(ctx context.Context, query any, _ driver.Options) (driver.Rows
 		}
 	}
 
+	var warning string
 	if ddoc := vopts.UseIndexDdoc(); ddoc != "" {
 		where, args := mangoIndexWhere(ddoc, vopts.UseIndexName())
 		var count int
@@ -48,7 +285,7 @@ func (d *db) Find(ctx context.Context, query any, _ driver.Options) (driver.Rows
 			return nil, err
 		}
 		if count == 0 {
-			return nil, &internal.Error{Status: http.StatusBadRequest, Message: fmt.Sprintf("index %q not found", ddoc)}
+			warning = ddoc + " was not used because it does not contain a valid index for this query."
 		}
 	}
 
@@ -61,7 +298,20 @@ func (d *db) Find(ctx context.Context, query any, _ driver.Options) (driver.Rows
 		selector = raw.Selector
 	}
 
-	return d.queryBuiltinView(ctx, vopts, selector, sortOrderBy)
+	if warning == "" && vopts.UseIndexDdoc() == "" {
+		var selectorMap map[string]any
+		if err := json.Unmarshal(selector, &selectorMap); err == nil && len(selectorMap) > 0 {
+			idx, err := d.selectMangoIndex(ctx, selectorMap, vopts.SortFields())
+			if err != nil {
+				return nil, err
+			}
+			if idx["name"] == "_all_docs" {
+				warning = warningNoMatchingIndex
+			}
+		}
+	}
+
+	return d.queryBuiltinView(ctx, vopts, selector, sortOrderBy, warning)
 }
 
 func (d *db) sortOrderByFromIndex(ctx context.Context, sortFields []options.SortField, useIndexDdoc, useIndexName string) (string, error) {
@@ -106,6 +356,9 @@ func (d *db) sortOrderByFromIndex(ctx context.Context, sortFields []options.Sort
 }
 
 func coversSort(indexFields []string, sortFields []options.SortField) bool {
+	if len(sortFields) == 0 {
+		return false
+	}
 	if len(sortFields) > len(indexFields) {
 		return false
 	}
@@ -115,6 +368,20 @@ func coversSort(indexFields []string, sortFields []options.SortField) bool {
 		}
 	}
 	return true
+}
+
+// mapFieldsToAny converts a slice of field maps from map[string]string to map[string]any,
+// suitable for inclusion in query plan definitions.
+func mapFieldsToAny(fields []map[string]string) []any {
+	anyFields := make([]any, len(fields))
+	for i, f := range fields {
+		m := make(map[string]any, len(f))
+		for k, v := range f {
+			m[k] = v
+		}
+		anyFields[i] = m
+	}
+	return anyFields
 }
 
 // mangoIndexWhere builds a WHERE clause and args for querying the mango
@@ -150,19 +417,18 @@ func selectorToSQL(selector json.RawMessage, argOffset int) ([]string, []any, bo
 		switch {
 		case key == "$and":
 			c, a, ok := combineSelectors(val, " AND ", false, argOffset+len(args))
-			conds = append(conds, c...)
-			args = append(args, a...)
-			if !ok {
-				complete = false
-			}
+			appendCombined(&conds, c, &args, a, &complete, ok)
 
 		case key == "$or":
 			c, a, ok := combineSelectors(val, " OR ", true, argOffset+len(args))
-			conds = append(conds, c...)
-			args = append(args, a...)
-			if !ok {
-				complete = false
+			appendCombined(&conds, c, &args, a, &complete, ok)
+
+		case key == "$nor":
+			c, a, ok := combineSelectors(val, " OR ", true, argOffset+len(args))
+			for i, cond := range c {
+				c[i] = "NOT " + cond
 			}
+			appendCombined(&conds, c, &args, a, &complete, ok)
 
 		case strings.HasPrefix(key, "$"):
 			continue
@@ -183,6 +449,16 @@ func selectorToSQL(selector json.RawMessage, argOffset int) ([]string, []any, bo
 		return nil, nil, complete
 	}
 	return conds, args, complete
+}
+
+// appendCombined appends combined selector results to the conditions and arguments slices,
+// and updates the complete flag if the combination was incomplete.
+func appendCombined(conds *[]string, c []string, args *[]any, a []any, complete *bool, ok bool) {
+	*conds = append(*conds, c...)
+	*args = append(*args, a...)
+	if !ok {
+		*complete = false
+	}
 }
 
 // combineSelectors unmarshals val as an array of sub-selectors, converts each
@@ -248,17 +524,6 @@ func fieldCondition(jsonPath string, val json.RawMessage, argOffset int) (string
 			}
 			return expr + " IS NULL", nil
 
-		case "$in":
-			var values []json.RawMessage
-			if err := json.Unmarshal(opVal, &values); err != nil {
-				return "", nil
-			}
-			args := make([]any, len(values))
-			for i, v := range values {
-				args[i] = decodeValue(v)
-			}
-			return expr + " IN (" + placeholders(argOffset+1, len(values)) + ")", args
-
 		case "$gt", "$gte", "$lt", "$lte":
 			return inequalityCondition(expr, jsonPath, op, opVal, argOffset)
 
@@ -266,6 +531,13 @@ func fieldCondition(jsonPath string, val json.RawMessage, argOffset int) (string
 			return comparisonCondition(expr, "=", opVal, argOffset)
 		case "$ne":
 			return comparisonCondition(expr, "!=", opVal, argOffset)
+
+		case "$not":
+			cond, args := fieldCondition(jsonPath, opVal, argOffset)
+			if cond == "" {
+				return "", nil
+			}
+			return "NOT (" + cond + ")", args
 
 		default:
 			return "", nil

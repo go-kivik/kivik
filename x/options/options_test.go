@@ -26,6 +26,7 @@ import (
 	"github.com/go-kivik/kivik/v4"
 	"github.com/go-kivik/kivik/v4/driver"
 	"github.com/go-kivik/kivik/v4/int/mock"
+	"github.com/go-kivik/kivik/v4/x/mango"
 )
 
 func TestFeed(t *testing.T) {
@@ -1272,6 +1273,153 @@ func TestSince(t *testing.T) {
 		}
 		if gotSince != tt.wantSince {
 			t.Errorf("got since=%q, want since=%q", gotSince, tt.wantSince)
+		}
+	})
+}
+
+func mustSelector(input string) *mango.Selector {
+	var s mango.Selector
+	if err := json.Unmarshal([]byte(input), &s); err != nil {
+		panic(err)
+	}
+	return &s
+}
+
+func TestFindOptions(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		input      json.RawMessage
+		wantErr    string
+		wantStatus int
+		want       *ViewOptions
+	}
+
+	tests := testy.NewTable()
+
+	tests.Add("null selector", test{
+		input:      json.RawMessage(`{"selector": null}`),
+		wantErr:    "selector cannot be null",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("missing selector", test{
+		input:      json.RawMessage(`{}`),
+		wantErr:    "selector cannot be null",
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("invalid JSON", test{
+		input:      json.RawMessage(`not valid json`),
+		wantErr:    `invalid character 'o' in literal null \(expecting 'u'\)`,
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("invalid selector JSON value", test{
+		input:      json.RawMessage(`{"selector": "not an object"}`),
+		wantErr:    `cannot unmarshal string into Go struct field \.selector`,
+		wantStatus: http.StatusBadRequest,
+	})
+	tests.Add("unknown mango operator propagates error", test{
+		input:      json.RawMessage(`{"selector": {"$bogus": 1}}`),
+		wantErr:    `unknown operator \$bogus`,
+		wantStatus: http.StatusBadRequest,
+	})
+	findBase := ViewOptions{
+		PaginationOptions: PaginationOptions{limit: -1},
+		view:              ViewAllDocs,
+		includeDocs:       true,
+		findLimit:         defaultFindLimit,
+	}
+
+	tests.Add("empty selector object", func() test {
+		want := findBase
+		want.selector = mustSelector(`{}`)
+		return test{
+			input: json.RawMessage(`{"selector": {}}`),
+			want:  &want,
+		}
+	}())
+	tests.Add("simple equality selector", func() test {
+		want := findBase
+		want.selector = mustSelector(`{"name": "Alice"}`)
+		return test{
+			input: json.RawMessage(`{"selector": {"name": "Alice"}}`),
+			want:  &want,
+		}
+	}())
+	tests.Add("explicit limit", func() test {
+		want := findBase
+		want.selector = mustSelector(`{}`)
+		want.findLimit = 10
+		return test{
+			input: json.RawMessage(`{"selector": {}, "limit": 10}`),
+			want:  &want,
+		}
+	}())
+	tests.Add("zero limit", func() test {
+		want := findBase
+		want.selector = mustSelector(`{}`)
+		want.findLimit = 0
+		return test{
+			input: json.RawMessage(`{"selector": {}, "limit": 0}`),
+			want:  &want,
+		}
+	}())
+	tests.Add("explicit skip", func() test {
+		want := findBase
+		want.selector = mustSelector(`{}`)
+		want.findSkip = 5
+		return test{
+			input: json.RawMessage(`{"selector": {}, "skip": 5}`),
+			want:  &want,
+		}
+	}())
+	tests.Add("fields option", func() test {
+		want := findBase
+		want.selector = mustSelector(`{}`)
+		want.fields = []string{"name", "age"}
+		return test{
+			input: json.RawMessage(`{"selector": {}, "fields": ["name", "age"]}`),
+			want:  &want,
+		}
+	}())
+	tests.Add("sort option", func() test {
+		want := findBase
+		want.selector = mustSelector(`{}`)
+		want.sort = []SortField{{Field: "name"}}
+		return test{
+			input: json.RawMessage(`{"selector": {}, "sort": ["name"]}`),
+			want:  &want,
+		}
+	}())
+	tests.Add("use_index string", func() test {
+		want := findBase
+		want.selector = mustSelector(`{}`)
+		want.useIndexDdoc = "myindex"
+		return test{
+			input: json.RawMessage(`{"selector": {}, "use_index": "myindex"}`),
+			want:  &want,
+		}
+	}())
+
+	selectorComparer := cmp.Comparer(func(a, b *mango.Selector) bool {
+		if a == nil || b == nil {
+			return a == b
+		}
+		return a.Match(nil) == b.Match(nil)
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		got, err := FindOptions(tt.input)
+		if !testy.ErrorMatchesRE(tt.wantErr, err) {
+			t.Errorf("unexpected error: %v", err)
+		}
+		if status := kivik.HTTPStatus(err); status != tt.wantStatus {
+			t.Errorf("unexpected status: %d", status)
+		}
+		if err != nil {
+			return
+		}
+		if d := cmp.Diff(tt.want, got, cmp.AllowUnexported(ViewOptions{}, PaginationOptions{}), selectorComparer); d != "" {
+			t.Errorf("Unexpected result:\n%s", d)
 		}
 	})
 }

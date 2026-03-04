@@ -990,7 +990,7 @@ func FindOptions(query any) (*ViewOptions, error) {
 		view:         ViewAllDocs,
 		conflicts:    conflicts,
 		includeDocs:  true,
-		findLimit:    limit,
+		findLimit:    findLimitWithDefault(limit),
 		findSkip:     skip,
 		selector:     s.Selector,
 		fields:       fields,
@@ -1151,6 +1151,15 @@ func (v ViewOptions) Selector() *mango.Selector { return v.selector }
 
 // Fields returns the fields option for _find queries.
 func (v ViewOptions) Fields() []string { return v.fields }
+
+const defaultFindLimit = 25
+
+func findLimitWithDefault(limit int64) int64 {
+	if limit < 0 {
+		return defaultFindLimit
+	}
+	return limit
+}
 
 // FindLimit returns the limit option for _find queries.
 func (v ViewOptions) FindLimit() int64 { return v.findLimit }

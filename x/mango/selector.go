@@ -15,8 +15,9 @@ package mango
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
+
+	"github.com/dlclark/regexp2"
 
 	"github.com/go-kivik/kivik/v4/x/collate"
 )
@@ -236,7 +237,11 @@ func (e *conditionNode) Match(doc any) bool {
 		if !ok {
 			return false
 		}
-		return e.cond.(*regexp.Regexp).MatchString(str)
+		matched, err := e.cond.(*regexp2.Regexp).MatchString(str)
+		if err != nil {
+			return false
+		}
+		return matched
 	case OpAll:
 		array, ok := doc.([]any)
 		if !ok {

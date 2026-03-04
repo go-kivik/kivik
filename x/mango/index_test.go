@@ -84,9 +84,14 @@ func TestExtractIndexFields(t *testing.T) {
 			want:     []string{"name", "age"},
 		},
 		{
-			name:     "object fields with direction",
-			indexDef: []byte(`{"fields":[{"name":"asc"},{"age":"desc"}]}`),
+			name:     "object fields with uniform direction",
+			indexDef: []byte(`{"fields":[{"name":"asc"},{"age":"asc"}]}`),
 			want:     []string{"name", "age"},
+		},
+		{
+			name:     "mixed sort directions",
+			indexDef: []byte(`{"fields":[{"name":"asc"},{"age":"desc"}]}`),
+			wantErr:  "Sorts currently only support a single direction",
 		},
 		{
 			name:     "mixed string and object fields",

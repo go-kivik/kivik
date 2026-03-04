@@ -16,8 +16,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"regexp"
 	"sort"
+
+	"github.com/dlclark/regexp2"
 )
 
 // Selector represents a Mango Selector tree.
@@ -200,7 +201,7 @@ func opAndValue(input json.RawMessage) (Operator, any, error) {
 				if err := json.Unmarshal(v, &pattern); err != nil {
 					return "", nil, fmt.Errorf("%s: %w", k, err)
 				}
-				re, err := regexp.Compile(pattern)
+				re, err := regexp2.Compile(pattern, regexp2.None)
 				if err != nil {
 					return "", nil, fmt.Errorf("%s: %w", k, err)
 				}

@@ -13,9 +13,9 @@
 package mango
 
 import (
-	"regexp"
 	"testing"
 
+	"github.com/dlclark/regexp2"
 	"gitlab.com/flimzy/testy"
 )
 
@@ -355,7 +355,7 @@ func TestMatch(t *testing.T) {
 	tests.Add("regex", test{
 		sel: &conditionNode{
 			op:   OpRegex,
-			cond: regexp.MustCompile("^foo$"),
+			cond: regexp2.MustCompile("^foo$", regexp2.None),
 		},
 		doc:  "foo",
 		want: true,
@@ -363,7 +363,7 @@ func TestMatch(t *testing.T) {
 	tests.Add("!regex", test{
 		sel: &conditionNode{
 			op:   OpRegex,
-			cond: regexp.MustCompile("^foo$"),
+			cond: regexp2.MustCompile("^foo$", regexp2.None),
 		},
 		doc:  "bar",
 		want: false,
@@ -371,7 +371,7 @@ func TestMatch(t *testing.T) {
 	tests.Add("regexp, non-string", test{
 		sel: &conditionNode{
 			op:   OpRegex,
-			cond: regexp.MustCompile("^foo$"),
+			cond: regexp2.MustCompile("^foo$", regexp2.None),
 		},
 		doc:  float64(5),
 		want: false,

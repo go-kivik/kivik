@@ -13,9 +13,9 @@
 package mango
 
 import (
-	"regexp"
 	"testing"
 
+	"github.com/dlclark/regexp2"
 	"github.com/google/go-cmp/cmp"
 	"gitlab.com/flimzy/testy"
 )
@@ -231,7 +231,7 @@ func TestParse(t *testing.T) {
 			field: "foo",
 			cond: &conditionNode{
 				op:   OpRegex,
-				cond: regexp.MustCompile("^bar$"),
+				cond: regexp2.MustCompile("^bar$", regexp2.None),
 			},
 		},
 	})
@@ -241,7 +241,17 @@ func TestParse(t *testing.T) {
 	})
 	tests.Add("regexp invalid", test{
 		input:   `{"foo": {"$regex": "["}}`,
-		wantErr: "$regex: error parsing regexp: missing closing ]: `[`",
+		wantErr: "$regex: error parsing regexp: unterminated [] set in `[`",
+	})
+	tests.Add("regexp PCRE backreference", test{
+		input: `{"field": {"$regex": "(a)\\1"}}`,
+		want: &fieldNode{
+			field: "field",
+			cond: &conditionNode{
+				op:   OpRegex,
+				cond: regexp2.MustCompile(`(a)\1`, regexp2.None),
+			},
+		},
 	})
 	tests.Add("implicit $and", test{
 		input: `{"foo":"bar","baz":"qux"}`,

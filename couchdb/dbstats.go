@@ -29,7 +29,8 @@ type dbStats struct {
 		External int64 `json:"external"`
 		Active   int64 `json:"active"`
 	} `json:"sizes"`
-	UpdateSeq json.RawMessage `json:"update_seq"` // nolint: govet
+	UpdateSeq json.RawMessage `json:"update_seq"` //nolint:govet // shadows embedded field to unmarshal as raw JSON, since CouchDB versions vary between string and number
+	PurgeSeq  json.RawMessage `json:"purge_seq"`  //nolint:govet // shadows embedded field to unmarshal as raw JSON, since CouchDB versions vary between string and number
 	rawBody   json.RawMessage
 }
 
@@ -56,6 +57,7 @@ func (s *dbStats) driverStats() *driver.DBStats {
 		stats.ActiveSize = s.Sizes.Active
 	}
 	stats.UpdateSeq = string(bytes.Trim(s.UpdateSeq, `"`))
+	stats.PurgeSeq = string(bytes.Trim(s.PurgeSeq, `"`))
 	stats.RawResponse = s.rawBody
 	return stats
 }

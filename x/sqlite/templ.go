@@ -52,8 +52,8 @@ func (t *tmplFuncs) Revs() string              { return t.tableName("$revs") }
 func (t *tmplFuncs) Attachments() string       { return t.tableName("$attachments") }
 func (t *tmplFuncs) AttachmentsBridge() string { return t.tableName("$attachments_bridge") }
 func (t *tmplFuncs) Design() string            { return t.tableName("$design") }
-func (t *tmplFuncs) Security() string          { return t.tableName("$security") }
 func (t *tmplFuncs) MangoIndexes() string      { return t.tableName("$mango_indexes") }
+func (t *tmplFuncs) Metadata() string          { return t.tableName("$metadata") }
 func (t *tmplFuncs) IndexKey() string          { return t.indexName("$key") }
 func (t *tmplFuncs) IndexParent() string       { return t.indexName("$parent") }
 

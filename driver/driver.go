@@ -142,6 +142,7 @@ type DBStats struct {
 	DiskSize       int64           `json:"disk_size"`
 	ActiveSize     int64           `json:"data_size"`
 	ExternalSize   int64           `json:"-"`
+	PurgeSeq       string          `json:"purge_seq"`
 	Cluster        *ClusterStats   `json:"cluster,omitempty"`
 	RawResponse    json.RawMessage `json:"-"`
 }

@@ -59,6 +59,8 @@ func (d *db) Ping(ctx context.Context) error {
 // Stats returns database statistics.
 func (d *db) Stats(ctx context.Context) (*driver.DBStats, error) {
 	var docCount, deletedCount int64
+	var lastSeq uint64
+	var purgeSeq string
 	err := d.db.QueryRowContext(ctx, d.query(`
 		WITH leaves AS (
 			SELECT
@@ -78,17 +80,14 @@ func (d *db) Stats(ctx context.Context) (*driver.DBStats, error) {
 		)
 		SELECT
 			COALESCE(SUM(CASE WHEN NOT deleted THEN 1 ELSE 0 END), 0),
-			COALESCE(SUM(CASE WHEN deleted THEN 1 ELSE 0 END), 0)
+			COALESCE(SUM(CASE WHEN deleted THEN 1 ELSE 0 END), 0),
+			COALESCE((SELECT MAX(seq) FROM {{ .Docs }}), 0),
+			COALESCE((SELECT value FROM {{ .Metadata }} WHERE key = 'purge_seq'), '0')
 		FROM leaves
 		WHERE rank = 1
-	`)).Scan(&docCount, &deletedCount)
+	`)).Scan(&docCount, &deletedCount, &lastSeq, &purgeSeq)
 	if err != nil {
 		return nil, d.errDatabaseNotFound(err)
-	}
-
-	lastSeq, err := d.lastSeq(ctx)
-	if err != nil {
-		return nil, err
 	}
 
 	return &driver.DBStats{
@@ -96,6 +95,7 @@ func (d *db) Stats(ctx context.Context) (*driver.DBStats, error) {
 		DocCount:     docCount,
 		DeletedCount: deletedCount,
 		UpdateSeq:    strconv.FormatUint(lastSeq, 10),
+		PurgeSeq:     purgeSeq,
 	}, nil
 }
 

@@ -85,15 +85,15 @@ var schema = []string{
 		FOREIGN KEY (id, rev, rev_id) REFERENCES {{ .Docs }} (id, rev, rev_id) ON DELETE CASCADE,
 		UNIQUE (id, rev, rev_id, func_type, func_name)
 	)`,
-	`CREATE TABLE {{ .Security }} (
-		id INTEGER PRIMARY KEY CHECK (id = 1),
-		security TEXT NOT NULL DEFAULT '{}'
-	)`,
 	`CREATE TABLE {{ .MangoIndexes }} (
 		ddoc TEXT NOT NULL,
 		name TEXT NOT NULL,
 		index_def TEXT NOT NULL,
 		UNIQUE(ddoc, name)
+	)`,
+	`CREATE TABLE {{ .Metadata }} (
+		key TEXT PRIMARY KEY,
+		value TEXT NOT NULL
 	)`,
 }
 
@@ -111,8 +111,8 @@ var viewSchema = []string{
 }
 
 var destroySchema = []string{
+	`DROP TABLE {{ .Metadata }}`,
 	`DROP TABLE {{ .MangoIndexes }}`,
-	`DROP TABLE {{ .Security }}`,
 	`DROP TABLE {{ .Design }}`,
 	`DROP TABLE {{ .AttachmentsBridge }}`,
 	`DROP TABLE {{ .Attachments }}`,

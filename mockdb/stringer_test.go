@@ -1228,7 +1228,7 @@ func TestStatsString(t *testing.T) {
 	tests.Add("return value", stringerTest{
 		input: &ExpectedStats{ret0: &driver.DBStats{Name: "foo"}, commonExpectation: commonExpectation{db: &DB{name: "foo"}}},
 		expected: `call to DB(foo#0).Stats() which:
-	- should return stats: &{foo false 0 0  0 0 0 <nil> []}`,
+	- should return stats: &{foo false 0 0  0 0 0  <nil> []}`,
 	})
 	tests.Add("error", stringerTest{
 		input: &ExpectedStats{commonExpectation: commonExpectation{db: &DB{name: "foo"}, err: errors.New("foo err")}},

@@ -2,9 +2,6 @@
 
 ## Correctness
 
-- [ ] **Purge sequence tracking** (`purge.go`, `schema.go`) — No purge_seq is
-  stored or returned. `PurgeResult.Seq` always returns 0. Needs schema
-  addition and tracking on each purge operation.
 - [ ] **View index invalidation on ddoc update** (`designdocs.go`) — Verify
   that old view indexes are properly dropped/rebuilt when a design document
   changes.

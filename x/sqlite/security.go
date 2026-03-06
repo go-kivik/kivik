@@ -25,7 +25,7 @@ import (
 func (d *db) Security(ctx context.Context) (*driver.Security, error) {
 	var secJSON string
 	err := d.db.QueryRowContext(ctx, d.query(`
-		SELECT security FROM {{ .Security }} WHERE id = 1
+		SELECT value FROM {{ .Metadata }} WHERE key = 'security'
 	`)).Scan(&secJSON)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -48,7 +48,7 @@ func (d *db) SetSecurity(ctx context.Context, security *driver.Security) error {
 		return err
 	}
 	_, err = d.db.ExecContext(ctx, d.query(`
-		INSERT OR REPLACE INTO {{ .Security }} (id, security) VALUES (1, ?)
+		INSERT OR REPLACE INTO {{ .Metadata }} (key, value) VALUES ('security', ?)
 	`), string(secJSON))
 	return err
 }

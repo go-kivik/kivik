@@ -2,12 +2,6 @@
 
 ## Correctness
 
-- [ ] **Find cross-type comparison correctness** (`find.go`) —
-  `selectorToSQL` translates comparison operators (`$lt`, `$lte`, `$gt`,
-  `$gte`, `$eq`) to SQL, but SQLite doesn't support CouchDB's cross-type
-  ordering (null < bool < number < string < array < object). When
-  `selectorComplete=true`, the in-memory filter is skipped, producing
-  incorrect results for cross-type queries.
 - [ ] **Purge sequence tracking** (`purge.go`, `schema.go`) — No purge_seq is
   stored or returned. `PurgeResult.Seq` always returns 0. Needs schema
   addition and tracking on each purge operation.
@@ -62,3 +56,8 @@
 - [ ] **Filter in Go instead of SQL** (`query.go:569`) — Local and design
   document filtering during view updates is done in Go after fetching rows,
   rather than in the SQL query.
+- [ ] **Cross-type SQL optimization** (`find.go`) — Inequality SQL type guards
+  could encode CouchDB's type ordering directly (e.g. `$gt: 21` →
+  `(type IN ('integer','real') AND val > 21) OR type IN ('text','array','object')`)
+  to allow `selectorComplete=true` and skip the in-memory fallback. Currently
+  correctness is ensured by always falling back to in-memory filtering.

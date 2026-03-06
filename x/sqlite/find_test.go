@@ -409,6 +409,24 @@ func TestFind(t *testing.T) {
 			wantWarning: "no matching index found, create an index to optimize query time",
 		}
 	})
+	tests.Add("$gt cross-type comparison excludes lower types", func(t *testing.T) any {
+		d := newDB(t)
+		_ = d.tPut("null_doc", map[string]any{"age": nil})
+		_ = d.tPut("bool_doc", map[string]any{"age": true})
+		_ = d.tPut("low_num", map[string]any{"age": 18})
+		revHighNum := d.tPut("high_num", map[string]any{"age": 30})
+		revStr := d.tPut("str_doc", map[string]any{"age": "old"})
+
+		return test{
+			db:    d,
+			query: `{"selector":{"age":{"$gt":21}}}`,
+			want: []rowResult{
+				{Doc: `{"_id":"high_num","_rev":"` + revHighNum + `","age":30}`},
+				{Doc: `{"_id":"str_doc","_rev":"` + revStr + `","age":"old"}`},
+			},
+			wantWarning: "no matching index found, create an index to optimize query time",
+		}
+	})
 	tests.Add("default limit of 25 applied when no limit specified", func(t *testing.T) any {
 		d := newDB(t)
 		want := make([]rowResult, 0, 25)
@@ -1019,28 +1037,28 @@ func Test_selectorToSQL(t *testing.T) {
 		argOffset:    0,
 		wantConds:    []string{`json_type(doc.doc, '$."age"') NOT IN ('integer', 'real') OR json_extract(doc.doc, '$."age"') > $1`},
 		wantArgs:     []any{float64(21)},
-		wantComplete: true,
+		wantComplete: false,
 	})
 	tests.Add("$lt with string", test{
 		selector:     json.RawMessage(`{"name": {"$lt": "M"}}`),
 		argOffset:    0,
 		wantConds:    []string{`json_type(doc.doc, '$."name"') != 'text' OR json_extract(doc.doc, '$."name"') < $1`},
 		wantArgs:     []any{"M"},
-		wantComplete: true,
+		wantComplete: false,
 	})
 	tests.Add("$gte with number", test{
 		selector:     json.RawMessage(`{"score": {"$gte": 90.5}}`),
 		argOffset:    0,
 		wantConds:    []string{`json_type(doc.doc, '$."score"') NOT IN ('integer', 'real') OR json_extract(doc.doc, '$."score"') >= $1`},
 		wantArgs:     []any{float64(90.5)},
-		wantComplete: true,
+		wantComplete: false,
 	})
 	tests.Add("$exists true", test{
 		selector:     json.RawMessage(`{"name": {"$exists": true}}`),
 		argOffset:    0,
 		wantConds:    []string{`json_extract(doc.doc, '$."name"') IS NOT NULL`},
 		wantArgs:     nil,
-		wantComplete: true,
+		wantComplete: false,
 	})
 	tests.Add("$in", test{
 		selector:     json.RawMessage(`{"status": {"$in": ["active", "pending"]}}`),
@@ -1068,7 +1086,7 @@ func Test_selectorToSQL(t *testing.T) {
 		argOffset:    0,
 		wantConds:    []string{`json_extract(doc.doc, '$."name"') = $1 AND json_extract(doc.doc, '$."age"') = $2`},
 		wantArgs:     []any{"Bob", float64(21)},
-		wantComplete: true,
+		wantComplete: false,
 	})
 	tests.Add("$or", test{
 		selector:     json.RawMessage(`{"$or": [{"name": "Bob"}, {"name": "Alice"}]}`),
@@ -1082,7 +1100,7 @@ func Test_selectorToSQL(t *testing.T) {
 		argOffset:    0,
 		wantConds:    []string{`json_extract(doc.doc, '$."name"') IS NULL`},
 		wantArgs:     nil,
-		wantComplete: true,
+		wantComplete: false,
 	})
 	tests.Add("boolean true", test{
 		selector:     json.RawMessage(`{"active": true}`),
@@ -1110,7 +1128,7 @@ func Test_selectorToSQL(t *testing.T) {
 		argOffset:    0,
 		wantConds:    []string{`NOT (json_extract(doc.doc, '$."age"') = $1)`},
 		wantArgs:     []any{float64(21)},
-		wantComplete: true,
+		wantComplete: false,
 	})
 	tests.Add("$nor", test{
 		selector:     json.RawMessage(`{"$nor": [{"name": "Bob"}, {"name": "Alice"}]}`),

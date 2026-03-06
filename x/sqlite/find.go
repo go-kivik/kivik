@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
-	"sort"
 	"strings"
 
 	"github.com/go-kivik/kivik/v4/driver"
@@ -439,7 +438,8 @@ func selectorToSQL(selector json.RawMessage, argOffset int) ([]string, []any, bo
 			if c != "" {
 				conds = append(conds, c)
 				args = append(args, a...)
-			} else if len(val) > 0 && val[0] == '{' {
+			}
+			if len(val) > 0 && val[0] == '{' {
 				complete = false
 			}
 		}
@@ -596,7 +596,7 @@ func sortedKeys(m map[string]json.RawMessage) []string {
 	for k := range m {
 		keys = append(keys, k)
 	}
-	sort.Strings(keys)
+	slices.Sort(keys)
 	return keys
 }
 

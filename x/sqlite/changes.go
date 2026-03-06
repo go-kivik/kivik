@@ -115,7 +115,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts options.Map) (*normalCha
 		return nil, err
 	}
 
-	query := fmt.Sprintf(d.query(leavesCTE("")+`,
+	query := fmt.Sprintf(d.query(leavesCTE("", "")+`,
 		winning AS (
 			SELECT
 				id,

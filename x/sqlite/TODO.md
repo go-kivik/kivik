@@ -8,9 +8,6 @@
 
 ## Functionality
 
-- [ ] **`use_index` doesn't influence query execution** (`find.go`) — The hint
-  is validated and triggers a warning if missing, but doesn't guide the
-  query plan.
 - [ ] **`_approx_count_distinct` reduce function** — Not implemented.
 - [ ] **`_sum` extended capabilities** — CouchDB supports summing arrays and
   objects; verify full compatibility.

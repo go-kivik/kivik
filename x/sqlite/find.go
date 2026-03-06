@@ -276,8 +276,10 @@ func (d *db) Find(ctx context.Context, query any, _ driver.Options) (driver.Rows
 	}
 
 	var warning string
+	var indexedBy string
 	if ddoc := vopts.UseIndexDdoc(); ddoc != "" {
-		where, args := mangoIndexWhere(ddoc, vopts.UseIndexName())
+		name := vopts.UseIndexName()
+		where, args := mangoIndexWhere(ddoc, name)
 		var count int
 		if err := d.db.QueryRowContext(ctx, d.query(`
 			SELECT COUNT(*) FROM {{ .MangoIndexes }} WHERE `)+where, args...).Scan(&count); err != nil {
@@ -285,6 +287,8 @@ func (d *db) Find(ctx context.Context, query any, _ driver.Options) (driver.Rows
 		}
 		if count == 0 {
 			warning = ddoc + " was not used because it does not contain a valid index for this query."
+		} else if name != "" {
+			indexedBy = mangoIndexName(d.name, ddoc, name)
 		}
 	}
 
@@ -310,7 +314,7 @@ func (d *db) Find(ctx context.Context, query any, _ driver.Options) (driver.Rows
 		}
 	}
 
-	return d.queryBuiltinView(ctx, vopts, selector, sortOrderBy, warning)
+	return d.queryBuiltinView(ctx, vopts, selector, sortOrderBy, warning, indexedBy)
 }
 
 func (d *db) sortOrderByFromIndex(ctx context.Context, sortFields []options.SortField, useIndexDdoc, useIndexName string) (string, error) {

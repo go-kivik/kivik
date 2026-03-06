@@ -62,6 +62,7 @@ func (d *db) queryBuiltinView(
 	selector json.RawMessage,
 	sortOrderBy string,
 	warning string,
+	indexedBy string,
 ) (driver.Rows, error) {
 	args := []any{vopts.IncludeDocs(), vopts.Conflicts(), vopts.UpdateSeq(), vopts.Attachments(), vopts.Bookmark()}
 
@@ -79,7 +80,7 @@ func (d *db) queryBuiltinView(
 		}
 	}
 
-	query := fmt.Sprintf(d.query(leavesCTE(selectorWhere)+`,
+	query := fmt.Sprintf(d.query(leavesCTE(selectorWhere, indexedBy)+`,
 		main AS (
 			SELECT
 				CASE WHEN row_number = 1 THEN id        END AS id,

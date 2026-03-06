@@ -13,10 +13,12 @@
 package sqlite
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"testing"
@@ -524,6 +526,62 @@ func TestFindUsesIndex(t *testing.T) {
 	}
 	if !found {
 		t.Error("Expression index was not used by query plan")
+	}
+}
+
+func TestFindUsesIndexWithUseIndex(t *testing.T) {
+	t.Parallel()
+
+	dsn := fmt.Sprintf("file:findusesindex%d?mode=memory&cache=shared", dbSeq.Add(1))
+	d := drv{}
+	queryLog := &bytes.Buffer{}
+	c, err := d.NewClient(dsn, multiOptions{
+		OptionLogger(log.New(io.Discard, "", 0)),
+		OptionQueryLogger(log.New(queryLog, "", 0)),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = c.(*client).db.Close() })
+
+	if err := c.CreateDB(context.Background(), "test", nil); err != nil {
+		t.Fatal(err)
+	}
+	rawDB, err := c.DB("test", mock.NilOption)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = rawDB.Close() })
+	db := rawDB.(DB)
+
+	if err := db.CreateIndex(context.Background(), "_design/ageIdx", "ageIdx", json.RawMessage(`{"fields":["age"]}`), mock.NilOption); err != nil {
+		t.Fatal(err)
+	}
+
+	for i := range 10 {
+		id := fmt.Sprintf("doc%03d", i)
+		if _, err := db.Put(context.Background(), id, map[string]any{"age": i}, mock.NilOption); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	queryLog.Reset()
+
+	query := `{"selector":{"age":{"$gte":0}}, "use_index": ["_design/ageIdx","ageIdx"]}`
+	rows, err := db.Find(context.Background(), json.RawMessage(query), mock.NilOption)
+	if err != nil {
+		t.Fatalf("Find failed: %s", err)
+	}
+	if err := rows.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	ageIndexName := mangoIndexName("test", "_design/ageIdx", "ageIdx")
+	logged := queryLog.String()
+	if !strings.Contains(logged, "INDEXED BY "+ageIndexName) {
+		// TODO: leavesCTE should include INDEXED BY when use_index specifies
+		// a valid index, so SQLite is forced to use it.
+		t.Errorf("Find query does not contain INDEXED BY %s", ageIndexName)
 	}
 }
 

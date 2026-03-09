@@ -255,11 +255,11 @@ func TestSum(t *testing.T) {
 	})
 	tests.Add("with nil values", test{
 		values: []any{1.0, nil, 3.0},
-		want:   []any{4.0},
+		want:   []any{4.0}, // TODO: CouchDB errors on null values in _sum, not skips them
 	})
 	tests.Add("all nil values", test{
 		values: []any{nil, nil},
-		want:   []any{0.0},
+		want:   []any{0.0}, // TODO: CouchDB errors on null values in _sum, not skips them
 	})
 	tests.Add("negative values", test{
 		values: []any{-3.0, 1.0, -2.0},
@@ -278,7 +278,10 @@ func TestSum(t *testing.T) {
 		values:  []any{"hello"},
 		wantErr: `the _sum function requires that map values be numbers, arrays of numbers, or objects, not '"hello"'`,
 	})
-	// TODO: "mixed objects and numbers" — Should return error per CouchDB spec, currently silently ignores non-objects
+	tests.Add("mixed objects and numbers", test{
+		values:  []any{1.0, map[string]any{"a": 2.0}},
+		wantErr: `the _sum function requires that objects not be mixed with other data structures`,
+	})
 	tests.Add("object values", test{
 		values: []any{
 			map[string]any{"a": 1.0, "b": 2.0},

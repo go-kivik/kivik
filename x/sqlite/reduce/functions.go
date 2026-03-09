@@ -46,13 +46,6 @@ func Count(_ [][2]any, values []any, rereduce bool) ([]any, error) {
 //
 // [_sum]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#sum
 func Sum(_ [][2]any, values []any, _ bool) ([]any, error) {
-	// Check if any value is an object — objects can't mix with numbers/arrays
-	for _, value := range values {
-		if _, ok := value.(map[string]any); ok {
-			return []any{sumObjects(values)}, nil
-		}
-	}
-
 	var totals []float64
 	for _, value := range values {
 		switch v := value.(type) {
@@ -73,6 +66,18 @@ func Sum(_ [][2]any, values []any, _ bool) ([]any, error) {
 				}
 				totals[i] += f
 			}
+		case map[string]any:
+			if totals != nil {
+				return nil, &internal.Error{
+					Status:  http.StatusInternalServerError,
+					Message: "the _sum function requires that objects not be mixed with other data structures",
+				}
+			}
+			result, err := sumObjects(values)
+			if err != nil {
+				return nil, err
+			}
+			return []any{result}, nil
 		case nil:
 			// skip
 		default:
@@ -93,12 +98,18 @@ func Sum(_ [][2]any, values []any, _ bool) ([]any, error) {
 	return result, nil
 }
 
-func sumObjects(values []any) map[string]any {
+func sumObjects(values []any) (map[string]any, error) {
 	result := map[string]any{}
 	for _, value := range values {
+		if value == nil {
+			continue
+		}
 		obj, ok := value.(map[string]any)
 		if !ok {
-			continue
+			return nil, &internal.Error{
+				Status:  http.StatusInternalServerError,
+				Message: "the _sum function requires that objects not be mixed with other data structures",
+			}
 		}
 		for k, v := range obj {
 			switch val := v.(type) {
@@ -110,12 +121,16 @@ func sumObjects(values []any) map[string]any {
 				if !ok {
 					result[k] = val
 				} else {
-					result[k] = sumObjects([]any{existing, val})
+					merged, err := sumObjects([]any{existing, val})
+					if err != nil {
+						return nil, err
+					}
+					result[k] = merged
 				}
 			}
 		}
 	}
-	return result
+	return result, nil
 }
 
 type stats struct {

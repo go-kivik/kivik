@@ -46,13 +46,38 @@ func Count(_ [][2]any, values []any, rereduce bool) ([]any, error) {
 //
 // [_sum]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#sum
 func Sum(_ [][2]any, values []any, _ bool) ([]any, error) {
-	var total float64
+	var totals []float64
 	for _, value := range values {
-		if value != nil {
-			total += value.(float64)
+		switch v := value.(type) {
+		case float64:
+			if totals == nil {
+				totals = []float64{v}
+			} else {
+				totals[0] += v
+			}
+		case []any:
+			for i, elem := range v {
+				f, ok := elem.(float64)
+				if !ok {
+					continue
+				}
+				for len(totals) <= i {
+					totals = append(totals, 0)
+				}
+				totals[i] += f
+			}
+		case nil:
+			// skip
 		}
 	}
-	return []any{total}, nil
+	if totals == nil {
+		totals = []float64{0}
+	}
+	result := make([]any, len(totals))
+	for i, v := range totals {
+		result[i] = v
+	}
+	return result, nil
 }
 
 type stats struct {

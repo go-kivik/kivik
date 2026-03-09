@@ -232,3 +232,61 @@ func TestStats(t *testing.T) {
 		}
 	})
 }
+
+func TestSum(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		values   []any
+		rereduce bool
+		want     []any
+		wantErr  string
+	}
+
+	tests := testy.NewTable()
+
+	tests.Add("single value", test{
+		values: []any{5.0},
+		want:   []any{5.0},
+	})
+	tests.Add("multiple values", test{
+		values: []any{1.0, 2.0, 3.0},
+		want:   []any{6.0},
+	})
+	tests.Add("with nil values", test{
+		values: []any{1.0, nil, 3.0},
+		want:   []any{4.0},
+	})
+	tests.Add("all nil values", test{
+		values: []any{nil, nil},
+		want:   []any{0.0},
+	})
+	tests.Add("negative values", test{
+		values: []any{-3.0, 1.0, -2.0},
+		want:   []any{-4.0},
+	})
+	tests.Add("rereduce", test{
+		values:   []any{10.0, 20.0},
+		rereduce: true,
+		want:     []any{30.0},
+	})
+	tests.Add("mixed number and array values", test{
+		values: []any{2.0, []any{3.0, 5.0, 7.0}},
+		want:   []any{5.0, 5.0, 7.0},
+	})
+	// TODO: "string value" — Should return error for non-numeric values, currently panics
+	// TODO: "object value" — Should sum objects by field per CouchDB spec, currently panics
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		got, err := Sum(nil, tt.values, tt.rereduce)
+		if !testy.ErrorMatchesRE(tt.wantErr, err) {
+			t.Errorf("unexpected error: got %v, want /%s/", err, tt.wantErr)
+		}
+		if err != nil {
+			return
+		}
+		if d := cmp.Diff(tt.want, got); d != "" {
+			t.Errorf("unexpected result (-want +got):\n%s", d)
+		}
+	})
+}

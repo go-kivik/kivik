@@ -20,11 +20,11 @@ import (
 	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
-func (d *db) updateDesignDoc(ctx context.Context, tx *sql.Tx, rev revision, data *docData) error {
+func (d *db) updateDesignDoc(ctx context.Context, tx *sql.Tx, rev revision, curRev revision, data *docData) error {
 	if !data.IsDesignDoc() {
 		return nil
 	}
-	if err := d.dropOldMapTables(ctx, tx, data.ID); err != nil {
+	if err := d.dropMapTables(ctx, tx, data.ID, curRev); err != nil {
 		return err
 	}
 
@@ -76,12 +76,16 @@ func (d *db) updateDesignDoc(ctx context.Context, tx *sql.Tx, rev revision, data
 	return nil
 }
 
-func (d *db) dropOldMapTables(ctx context.Context, tx *sql.Tx, docID string) error {
+func (d *db) dropMapTables(ctx context.Context, tx *sql.Tx, docID string, curRev revision) error {
+	if curRev.rev == 0 {
+		return nil
+	}
 	rows, err := tx.QueryContext(ctx, d.query(`
 		SELECT id, rev, rev_id, func_name
 		FROM {{ .Design }}
 		WHERE func_type = 'map' AND id = $1
-	`), docID)
+			AND rev = $2 AND rev_id = $3
+	`), docID, curRev.rev, curRev.id)
 	if err != nil {
 		return err
 	}

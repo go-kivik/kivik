@@ -1,13 +1,5 @@
 # SQLite Driver TODO
 
-## Correctness
-
-- [ ] **dropOldMapTables drops too aggressively** (`designdocs.go`) — Currently
-  drops map tables for *all* revisions of a ddoc, but should only drop the
-  parent revision's tables. In a conflict scenario with multiple leaf
-  revisions, the current code would incorrectly drop other branches' map
-  tables.
-
 ## Functionality
 
 - [ ] **`_approx_count_distinct` reduce function** — Not implemented.

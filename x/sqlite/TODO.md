@@ -13,7 +13,6 @@
 - [ ] **`revs=true` + attachments in OpenRevs** — Not implemented/tested.
 - [ ] **Historical revision attachments** — Get attachment from old revision,
   correct attachment in conflict scenarios.
-- [ ] **Offset/TotalRows on AllDocs rows** — Verify these return correct values.
 - [ ] **AllDocs on nonexistent DB** — Verify correct error behavior.
 - [ ] **Filter functions** — Need more comprehensive testing/fleshing out.
 

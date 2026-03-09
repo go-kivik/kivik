@@ -201,6 +201,7 @@ func (d *db) queryBuiltinView(
 		rows:             results,
 		updateSeq:        meta.updateSeq,
 		totalRows:        meta.totalRows,
+		offset:           vopts.Skip(),
 		selector:         vopts.Selector(),
 		selectorComplete: selectorComplete,
 		findLimit:        vopts.FindLimit(),
@@ -279,6 +280,7 @@ type rows struct {
 	index               int64
 	fields              []string
 
+	offset   int64
 	done     bool
 	bookmark string
 	warning  string
@@ -404,8 +406,8 @@ func (r *rows) UpdateSeq() string {
 	return r.updateSeq
 }
 
-func (*rows) Offset() int64 {
-	return 0
+func (r *rows) Offset() int64 {
+	return r.offset
 }
 
 func (r *rows) TotalRows() int64 {

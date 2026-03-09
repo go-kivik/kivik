@@ -868,6 +868,34 @@ func TestDBAllDocs_total_rows(t *testing.T) {
 	}
 }
 
+func TestDBAllDocs_offset(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+
+	_ = d.tPut("a", map[string]string{"foo": "bar"})
+	_ = d.tPut("b", map[string]string{"foo": "baz"})
+	_ = d.tPut("c", map[string]string{"foo": "qux"})
+
+	rows, err := d.AllDocs(context.Background(), kivik.Param("skip", 1))
+	if err != nil {
+		t.Fatalf("Failed to query AllDocs: %s", err)
+	}
+	defer rows.Close()
+
+	for {
+		row := driver.Row{}
+		if err := rows.Next(&row); err != nil {
+			break
+		}
+	}
+
+	want := int64(1)
+	got := rows.Offset()
+	if got != want {
+		t.Errorf("Unexpected Offset: got %d, want %d", got, want)
+	}
+}
+
 func TestDBAllDocs_update_seq(t *testing.T) {
 	t.Parallel()
 	d := newDB(t)

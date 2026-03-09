@@ -274,7 +274,10 @@ func TestSum(t *testing.T) {
 		values: []any{2.0, []any{3.0, 5.0, 7.0}},
 		want:   []any{5.0, 5.0, 7.0},
 	})
-	// TODO: "string value" — Should return error for non-numeric values, currently panics
+	tests.Add("string value", test{
+		values:  []any{"hello"},
+		wantErr: `the _sum function requires that map values be numbers, arrays of numbers, or objects, not '"hello"'`,
+	})
 	// TODO: "mixed objects and numbers" — Should return error per CouchDB spec, currently silently ignores non-objects
 	tests.Add("object values", test{
 		values: []any{

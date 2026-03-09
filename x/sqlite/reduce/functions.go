@@ -75,6 +75,12 @@ func Sum(_ [][2]any, values []any, _ bool) ([]any, error) {
 			}
 		case nil:
 			// skip
+		default:
+			valBytes, _ := json.Marshal(v)
+			return nil, &internal.Error{
+				Status:  http.StatusInternalServerError,
+				Message: fmt.Sprintf("the _sum function requires that map values be numbers, arrays of numbers, or objects, not '%s'", string(valBytes)),
+			}
 		}
 	}
 	if totals == nil {

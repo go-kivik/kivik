@@ -214,8 +214,10 @@ func TestStats(t *testing.T) {
 		wantErr: `the _stats function requires that map values be arrays of the same length`,
 	})
 
-	// TODO: Test empty values slice. slices.Min/Max panic on empty slices,
-	// so Stats(nil, []any{}, false) would panic. Verify against CouchDB.
+	tests.Add("empty values", test{
+		values:  []any{},
+		wantErr: `the _stats function requires at least one value`,
+	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		got, err := Stats(nil, tt.values, tt.rereduce)

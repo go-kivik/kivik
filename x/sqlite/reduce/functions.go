@@ -135,6 +135,12 @@ func flattenStats(values []any) []stats {
 //
 // [_stats]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#stats
 func Stats(_ [][2]any, values []any, rereduce bool) ([]any, error) {
+	if len(values) == 0 {
+		return nil, &internal.Error{
+			Status:  http.StatusInternalServerError,
+			Message: "the _stats function requires at least one value",
+		}
+	}
 	if floatValues, ok, err := toFloatValues(values, rereduce); err != nil {
 		return nil, err
 	} else if ok {

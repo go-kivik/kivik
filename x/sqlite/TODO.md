@@ -6,8 +6,6 @@
 - [ ] **`_sum` extended capabilities** — CouchDB supports summing arrays and
   objects; verify full compatibility.
   See: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#sum
-- [ ] **`_stats` edge cases** — Differing lengths of arrays of floats, arrays
-  with mixed types, arrays of stats objects.
 - [ ] **Map/reduce timeout** — No timeout handling for long-running JS
   functions.
 - [ ] **`revs=true` + attachments in OpenRevs** — Not implemented/tested.

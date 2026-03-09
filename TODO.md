@@ -17,20 +17,17 @@
 - [ ] **MemoryDB missing attachment support**
   `x/memorydb/db.go:84` — `TODO: Add support for storing attachments`
 
-- [ ] **SQLite driver missing many optional interfaces**
-  No `BulkDocs`, `Copy`, `DesignDocs`, `LocalDocs`, `Purge`, `Security`,
-  `Flush`, `Config`, `Session`, `Replication`, `Cluster` support.
-  Some return stub "not implemented" errors, others simply don't implement
-  the interface.
+- [ ] **SQLite driver missing some optional interfaces**
+  `BulkDocs` and `Copy` return stub errors (polyfilled by kivik).
+  `Config`, `Session`, `Replication` not implemented.
 
 - [ ] **Searcher interface inconsistency**
   `driver/search.go` uses `map[string]interface{}` for options instead of
   `driver.Options` like every other interface method. Neither CouchDB nor
   SQLite implements `Searcher`.
 
-- [ ] **No `ClientCloser` implementation**
-  Neither CouchDB nor SQLite clients implement `Close()`, meaning users
-  can't properly clean up client resources.
+- [ ] **No `ClientCloser` implementation in CouchDB driver**
+  SQLite now implements `Close()`, but CouchDB client still doesn't.
 
 ## Test Coverage Gaps
 

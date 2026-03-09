@@ -275,7 +275,14 @@ func TestSum(t *testing.T) {
 		want:   []any{5.0, 5.0, 7.0},
 	})
 	// TODO: "string value" — Should return error for non-numeric values, currently panics
-	// TODO: "object value" — Should sum objects by field per CouchDB spec, currently panics
+	// TODO: "mixed objects and numbers" — Should return error per CouchDB spec, currently silently ignores non-objects
+	tests.Add("object values", test{
+		values: []any{
+			map[string]any{"a": 1.0, "b": 2.0},
+			map[string]any{"a": 3.0, "c": 4.0},
+		},
+		want: []any{map[string]any{"a": 4.0, "b": 2.0, "c": 4.0}},
+	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		got, err := Sum(nil, tt.values, tt.rereduce)

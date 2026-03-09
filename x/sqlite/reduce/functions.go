@@ -46,6 +46,13 @@ func Count(_ [][2]any, values []any, rereduce bool) ([]any, error) {
 //
 // [_sum]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#sum
 func Sum(_ [][2]any, values []any, _ bool) ([]any, error) {
+	// Check if any value is an object — objects can't mix with numbers/arrays
+	for _, value := range values {
+		if _, ok := value.(map[string]any); ok {
+			return []any{sumObjects(values)}, nil
+		}
+	}
+
 	var totals []float64
 	for _, value := range values {
 		switch v := value.(type) {
@@ -78,6 +85,31 @@ func Sum(_ [][2]any, values []any, _ bool) ([]any, error) {
 		result[i] = v
 	}
 	return result, nil
+}
+
+func sumObjects(values []any) map[string]any {
+	result := map[string]any{}
+	for _, value := range values {
+		obj, ok := value.(map[string]any)
+		if !ok {
+			continue
+		}
+		for k, v := range obj {
+			switch val := v.(type) {
+			case float64:
+				existing, _ := result[k].(float64)
+				result[k] = existing + val
+			case map[string]any:
+				existing, ok := result[k].(map[string]any)
+				if !ok {
+					result[k] = val
+				} else {
+					result[k] = sumObjects([]any{existing, val})
+				}
+			}
+		}
+	}
+	return result
 }
 
 type stats struct {

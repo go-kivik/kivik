@@ -316,10 +316,75 @@ func TestDBPut_designDocs(t *testing.T) {
 		}
 	})
 
+	tests.Add("updating ddoc drops old map tables", func(t *testing.T) any {
+		d := newDB(t)
+		rev := d.tPut("_design/foo", map[string]any{
+			"language": "javascript",
+			"views": map[string]any{
+				"bar": map[string]any{
+					"map": "function(doc) { emit(doc._id, null); }",
+				},
+			},
+		})
+
+		return test{
+			db:    d,
+			docID: "_design/foo",
+			doc: map[string]any{
+				"_rev":     rev,
+				"language": "javascript",
+				"views": map[string]any{
+					"bar": map[string]any{
+						"map": "function(doc) { emit(doc._id, 1); }",
+					},
+				},
+			},
+			wantRev: "2-.*",
+			wantRevs: []leaf{
+				{ID: "_design/foo", Rev: 1},
+				{ID: "_design/foo", Rev: 2, ParentRev: &[]int{1}[0]},
+			},
+			wantDDocs: []ddoc{
+				{
+					ID:         "_design/foo",
+					Rev:        1,
+					Lang:       "javascript",
+					FuncType:   "map",
+					FuncName:   "bar",
+					FuncBody:   "function(doc) { emit(doc._id, null); }",
+					AutoUpdate: true,
+				},
+				{
+					ID:         "_design/foo",
+					Rev:        2,
+					Lang:       "javascript",
+					FuncType:   "map",
+					FuncName:   "bar",
+					FuncBody:   "function(doc) { emit(doc._id, 1); }",
+					AutoUpdate: true,
+				},
+			},
+			check: func(t *testing.T) {
+				var viewCount int
+				err := d.underlying().QueryRow(`
+					SELECT COUNT(*)
+					FROM sqlite_master
+					WHERE type = 'table'
+						AND name LIKE 'kivik$foo_%_bar_map_%'
+				`).Scan(&viewCount)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if viewCount != 1 {
+					t.Errorf("Found %d view map tables after ddoc update, want 1", viewCount)
+				}
+			},
+		}
+	})
+
 	/*
 		TODO:
 		- unsupported language? -- ignored?
-		- Drop old indexes when a ddoc changes
 		- func_type: update, validate
 	*/
 

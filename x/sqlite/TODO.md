@@ -2,9 +2,11 @@
 
 ## Correctness
 
-- [ ] **View index invalidation on ddoc update** (`designdocs.go`) — Verify
-  that old view indexes are properly dropped/rebuilt when a design document
-  changes.
+- [ ] **dropOldMapTables drops too aggressively** (`designdocs.go`) — Currently
+  drops map tables for *all* revisions of a ddoc, but should only drop the
+  parent revision's tables. In a conflict scenario with multiple leaf
+  revisions, the current code would incorrectly drop other branches' map
+  tables.
 
 ## Functionality
 

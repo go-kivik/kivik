@@ -206,10 +206,13 @@ func TestStats(t *testing.T) {
 		}},
 	})
 
-	// TODO: Test differing-length float arrays (e.g. []any{1.0, 2.0} and
-	// []any{3.0}). reduceStatsFloatArray indexes by values[0] length, so
-	// shorter arrays silently skip elements and longer ones panic. Verify
-	// against CouchDB behavior.
+	tests.Add("differing-length float arrays", test{
+		values: []any{
+			[]any{1.0, 2.0},
+			[]any{3.0},
+		},
+		wantErr: `the _stats function requires that map values be arrays of the same length`,
+	})
 
 	// TODO: Test empty values slice. slices.Min/Max panic on empty slices,
 	// so Stats(nil, []any{}, false) would panic. Verify against CouchDB.

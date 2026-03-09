@@ -66,28 +66,37 @@ type stats struct {
 // toFloatValues converts values to a slice of float64 slices, if possible.
 // This is used when a map function returns an array of numbers to be aggregated
 // by the _stats function
-func toFloatValues(values []any, rereduce bool) ([][]float64, bool) {
+func toFloatValues(values []any, rereduce bool) ([][]float64, bool, error) {
 	if rereduce {
-		return nil, false
+		return nil, false, nil
 	}
 	_, isSlice := values[0].([]any)
 	if !isSlice {
-		return nil, false
+		return nil, false, nil
 	}
+	expectedLen := -1
 	floatValues := make([][]float64, 0, len(values))
 	for _, v := range values {
 		fv := v.([]any)
+		if expectedLen == -1 {
+			expectedLen = len(fv)
+		} else if len(fv) != expectedLen {
+			return nil, false, &internal.Error{
+				Status:  http.StatusInternalServerError,
+				Message: "the _stats function requires that map values be arrays of the same length",
+			}
+		}
 		float := make([]float64, 0, len(fv))
 		for _, f := range fv {
 			floatValue, ok := f.(float64)
 			if !ok {
-				return nil, false
+				return nil, false, nil
 			}
 			float = append(float, floatValue)
 		}
 		floatValues = append(floatValues, float)
 	}
-	return floatValues, true
+	return floatValues, true, nil
 }
 
 func toStatsValues(values []any, rereduce bool) ([][]stats, bool) {
@@ -126,7 +135,9 @@ func flattenStats(values []any) []stats {
 //
 // [_stats]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#stats
 func Stats(_ [][2]any, values []any, rereduce bool) ([]any, error) {
-	if floatValues, ok := toFloatValues(values, rereduce); ok {
+	if floatValues, ok, err := toFloatValues(values, rereduce); err != nil {
+		return nil, err
+	} else if ok {
 		return reduceStatsFloatArray(floatValues), nil
 	}
 	statsValues, ok := toStatsValues(values, rereduce)

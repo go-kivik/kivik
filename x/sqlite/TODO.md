@@ -3,9 +3,6 @@
 ## Functionality
 
 - [ ] **`_approx_count_distinct` reduce function** — Not implemented.
-- [ ] **`_sum` extended capabilities** — CouchDB supports summing arrays and
-  objects; verify full compatibility.
-  See: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#sum
 - [ ] **Map/reduce timeout** — No timeout handling for long-running JS
   functions.
 - [ ] **`revs=true` + attachments in OpenRevs** — Not implemented/tested.

@@ -254,12 +254,12 @@ func TestSum(t *testing.T) {
 		want:   []any{6.0},
 	})
 	tests.Add("with nil values", test{
-		values: []any{1.0, nil, 3.0},
-		want:   []any{4.0}, // TODO: CouchDB errors on null values in _sum, not skips them
+		values:  []any{1.0, nil, 3.0},
+		wantErr: `the _sum function requires that map values be numbers, arrays of numbers, or objects, not 'null'`,
 	})
 	tests.Add("all nil values", test{
-		values: []any{nil, nil},
-		want:   []any{0.0}, // TODO: CouchDB errors on null values in _sum, not skips them
+		values:  []any{nil, nil},
+		wantErr: `the _sum function requires that map values be numbers, arrays of numbers, or objects, not 'null'`,
 	})
 	tests.Add("negative values", test{
 		values: []any{-3.0, 1.0, -2.0},

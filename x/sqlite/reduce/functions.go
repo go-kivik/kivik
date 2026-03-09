@@ -78,8 +78,6 @@ func Sum(_ [][2]any, values []any, _ bool) ([]any, error) {
 				return nil, err
 			}
 			return []any{result}, nil
-		case nil:
-			// skip
 		default:
 			valBytes, _ := json.Marshal(v)
 			return nil, &internal.Error{
@@ -101,9 +99,6 @@ func Sum(_ [][2]any, values []any, _ bool) ([]any, error) {
 func sumObjects(values []any) (map[string]any, error) {
 	result := map[string]any{}
 	for _, value := range values {
-		if value == nil {
-			continue
-		}
 		obj, ok := value.(map[string]any)
 		if !ok {
 			return nil, &internal.Error{

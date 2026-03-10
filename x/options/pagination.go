@@ -88,6 +88,9 @@ func (o Map) PaginationOptions(allDBs bool) (*PaginationOptions, error) {
 	}, nil
 }
 
+// Skip returns the number of rows to skip.
+func (p PaginationOptions) Skip() int64 { return p.skip }
+
 func (p PaginationOptions) descendingModifier() int {
 	if p.descending {
 		return -1

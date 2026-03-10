@@ -3363,3 +3363,16 @@ func TestPartitionStats(t *testing.T) {
 		}
 	})
 }
+
+func Test_driverStats2kivikStats_PurgeSeq(t *testing.T) {
+	t.Parallel()
+	got := driverStats2kivikStats(&driver.DBStats{
+		PurgeSeq: "5",
+	})
+	want := &DBStats{
+		PurgeSeq: "5",
+	}
+	if d := cmp.Diff(want, got); d != "" {
+		t.Errorf("Unexpected result (-want +got):\n%s", d)
+	}
+}

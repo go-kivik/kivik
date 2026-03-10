@@ -726,14 +726,6 @@ func TestDBAllDocs(t *testing.T) {
 			},
 		}
 	})
-	/*
-		TODO:
-		- Options:
-			- att_encoding_infio
-		- AllDocs() called for DB that doesn't exit
-		- Offset() called on rows
-		- TotalRows() called on rows
-	*/
 
 	tests.Run(t, func(t *testing.T, tt test) {
 		t.Parallel()

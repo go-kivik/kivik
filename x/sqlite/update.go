@@ -24,7 +24,6 @@ import (
 
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
-	"github.com/go-kivik/kivik/x/sqlite/v4/js"
 )
 
 // Update calls the named update function with the provided document.
@@ -61,7 +60,7 @@ func (d *db) Update(ctx context.Context, ddoc, funcName, docID string, doc any, 
 		return "", err
 	}
 
-	updateFunc, err := js.Update(funcBody)
+	updateFunc, err := d.js.Update(funcBody)
 	if err != nil {
 		return "", err
 	}

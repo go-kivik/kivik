@@ -27,7 +27,6 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
 	"github.com/go-kivik/kivik/v4/x/options"
-	"github.com/go-kivik/kivik/x/sqlite/v4/js"
 	"github.com/go-kivik/kivik/x/sqlite/v4/reduce"
 )
 
@@ -418,7 +417,7 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *op
 }
 
 func (d *db) reduce(ctx context.Context, results *sql.Rows, reduceFuncJS string, groupLevel int) (driver.Rows, error) {
-	return reduce.Reduce(ctx, &reduceRowIter{results: results}, reduceFuncJS, d.logger, groupLevel)
+	return reduce.Reduce(ctx, &reduceRowIter{results: results}, reduceFuncJS, d.logger, d.js, groupLevel)
 }
 
 const batchSize = 100
@@ -542,7 +541,7 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 		emitID  string
 		emitRev revision
 	)
-	mapFunc, err := js.Map(*mapFuncJS, func(key, value any) {
+	mapFunc, err := d.js.Map(*mapFuncJS, func(key, value any) {
 		batch.add(emitID, emitRev, key, value)
 	})
 	if err != nil {

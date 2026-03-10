@@ -414,11 +414,11 @@ func ApproxCountDistinct(_ context.Context, keys [][2]any, values []any, rereduc
 }
 
 // ParseFunc parses the passed javascript string, and returns a Go function that
-// will execute it.  If the input is empty, nil is returned. If the input is a
-// string that corresponds to one of the built-in function names (i.e. '_sum',
-// '_count', etc), the native Go implementation is returned instead. The logger
-// is used to log any unhandled exceptions thrown by the JavaScript function.
-func ParseFunc(javascript string, logger *log.Logger) (Func, error) {
+// implements the reduce function. Built-in functions (_count, _sum, _stats,
+// _approx_count_distinct) are returned directly. User-defined functions are
+// compiled using the provided Runtime. The logger is used to log any unhandled
+// exceptions thrown by user-defined JavaScript functions.
+func ParseFunc(javascript string, logger *log.Logger, rt *js.Runtime) (Func, error) {
 	switch javascript {
 	case "":
 		return nil, nil
@@ -431,7 +431,7 @@ func ParseFunc(javascript string, logger *log.Logger) (Func, error) {
 	case "_approx_count_distinct":
 		return ApproxCountDistinct, nil
 	default:
-		reduceFunc, err := js.Reduce(javascript)
+		reduceFunc, err := rt.Reduce(javascript)
 		if err != nil {
 			return nil, err
 		}

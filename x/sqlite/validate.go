@@ -105,7 +105,7 @@ func (d *db) getValidateFuncs(ctx context.Context, tx *sql.Tx) ([]js.ValidateFun
 		if err := rows.Scan(&funcBody); err != nil {
 			return nil, err
 		}
-		fn, err := js.Validate(funcBody)
+		fn, err := d.js.Validate(funcBody)
 		if err != nil {
 			return nil, err
 		}

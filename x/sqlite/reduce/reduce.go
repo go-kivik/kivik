@@ -22,6 +22,7 @@ import (
 	"reflect"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/x/sqlite/v4/js"
 )
 
 // Reducer is the interface for iterating over rows of data to be reduced.
@@ -116,8 +117,7 @@ const defaultBatchSize = 1000
 
 // Reduce calls fn on rows, and returns the results. The input must be in
 // key-sorted order, and may contain both previously reduced rows, and map
-// output rows.  cb, if not nil, is called with the results of every
-// intermediate reduce step.
+// output rows.
 //
 // The Key field of the returned row(s) will be set only when grouping.
 //
@@ -126,12 +126,12 @@ const defaultBatchSize = 1000
 //	-1: Maximum grouping, same as group=true
 //	 0: No grouping, same as group=false
 //	1+: Group by the first N elements of the key, same as group_level=N
-func Reduce(ctx context.Context, rows Reducer, javascript string, logger *log.Logger, groupLevel int) (*Rows, error) {
-	return reduceWithBatchSize(ctx, rows, javascript, logger, groupLevel, defaultBatchSize)
+func Reduce(ctx context.Context, rows Reducer, javascript string, logger *log.Logger, rt *js.Runtime, groupLevel int) (*Rows, error) {
+	return reduceWithBatchSize(ctx, rows, javascript, logger, rt, groupLevel, defaultBatchSize)
 }
 
-func reduceWithBatchSize(ctx context.Context, rows Reducer, javascript string, logger *log.Logger, groupLevel int, batchSize int) (*Rows, error) {
-	fn, err := ParseFunc(javascript, logger)
+func reduceWithBatchSize(ctx context.Context, rows Reducer, javascript string, logger *log.Logger, rt *js.Runtime, groupLevel int, batchSize int) (*Rows, error) {
+	fn, err := ParseFunc(javascript, logger, rt)
 	if err != nil {
 		return nil, err
 	}

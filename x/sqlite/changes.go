@@ -31,7 +31,6 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
 	"github.com/go-kivik/kivik/v4/x/options"
-	"github.com/go-kivik/kivik/x/sqlite/v4/js"
 )
 
 type normalChanges struct {
@@ -252,13 +251,13 @@ func (d *db) newNormalChanges(ctx context.Context, opts options.Map) (*normalCha
 		}
 
 		if filterType == "filter" {
-			c.filter, err = js.Filter(*filterFuncJS)
+			c.filter, err = d.js.Filter(*filterFuncJS)
 			if err != nil {
 				return nil, &internal.Error{Status: http.StatusInternalServerError, Err: err}
 			}
 		} else {
 			var emitted bool
-			mapFunc, err := js.Map(*filterFuncJS, func(any, any) {
+			mapFunc, err := d.js.Map(*filterFuncJS, func(any, any) {
 				emitted = true
 			})
 			if err != nil {

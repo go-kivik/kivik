@@ -295,20 +295,16 @@ func (r *Runtime) Update(code string) (UpdateFunc, error) {
 	}, nil
 }
 
-// watchContext starts a goroutine that interrupts the VM when the context is
-// done. The returned function must be called (via defer) to clean up. It also
-// calls ClearInterrupt to ensure the VM is reusable.
+// watchContext arranges for the VM to be interrupted when the context is
+// done. The returned function must be called (via defer) to clean up. It
+// ensures any in-flight interrupt callback has completed, then calls
+// ClearInterrupt so the VM is reusable for subsequent calls.
 func watchContext(ctx context.Context, vm *goja.Runtime) func() {
-	ch := make(chan struct{})
-	go func() {
-		select {
-		case <-ctx.Done():
-			vm.Interrupt(ctx.Err())
-		case <-ch:
-		}
-	}()
+	stop := context.AfterFunc(ctx, func() {
+		vm.Interrupt(ctx.Err())
+	})
 	return func() {
-		close(ch)
+		stop()
 		vm.ClearInterrupt()
 	}
 }

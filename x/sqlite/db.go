@@ -22,12 +22,14 @@ import (
 
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
+	"github.com/go-kivik/kivik/x/sqlite/v4/js"
 )
 
 type db struct {
 	db     *sql.DB
 	name   string
 	logger *log.Logger
+	js     *js.Runtime
 }
 
 var (
@@ -42,6 +44,7 @@ func (c *client) newDB(name string) *db {
 		db:     c.db,
 		name:   name,
 		logger: c.logger,
+		js:     c.js,
 	}
 }
 

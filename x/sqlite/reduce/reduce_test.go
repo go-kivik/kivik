@@ -22,6 +22,7 @@ import (
 	"gitlab.com/flimzy/testy"
 
 	"github.com/go-kivik/kivik/v4"
+	"github.com/go-kivik/kivik/x/sqlite/v4/js"
 )
 
 func TestReduce(t *testing.T) {
@@ -207,7 +208,7 @@ func TestReduce(t *testing.T) {
 		if batchSize == 0 {
 			batchSize = defaultBatchSize
 		}
-		got, err := reduceWithBatchSize(context.Background(), tt.input, tt.javascript, log.New(io.Discard, "", 0), tt.groupLevel, batchSize)
+		got, err := reduceWithBatchSize(context.Background(), tt.input, tt.javascript, log.New(io.Discard, "", 0), new(js.Runtime), tt.groupLevel, batchSize)
 		if !testy.ErrorMatches(tt.wantErr, err) {
 			t.Errorf("Unexpected error: %v", err)
 		}

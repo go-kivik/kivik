@@ -57,10 +57,11 @@ func Map(code string, emit func(key, value any)) (MapFunc, error) {
 }
 
 // FilterFunc represents a CouchDB [filter function]. Exceptions are converted
-// to errors.
+// to errors. The context controls cancellation; if the context is cancelled,
+// the VM is interrupted and the context error is returned.
 //
 // [filter function]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#filter-functions
-type FilterFunc func(doc, req any) (bool, error)
+type FilterFunc func(ctx context.Context, doc, req any) (bool, error)
 
 // Filter compiles the provided JavaScript code into a FilterFunc.
 func Filter(code string) (FilterFunc, error) {
@@ -72,7 +73,9 @@ func Filter(code string) (FilterFunc, error) {
 	if !ok {
 		panic(fmt.Sprintf("expected filter to be a function, got %T", vm.Get("filter")))
 	}
-	return func(doc, req any) (bool, error) {
+	return func(ctx context.Context, doc, req any) (bool, error) {
+		done := watchContext(ctx, vm)
+		defer done()
 		result, err := filterFunc(goja.Undefined(), vm.ToValue(doc), vm.ToValue(req))
 		if err != nil {
 			return false, exception(err)

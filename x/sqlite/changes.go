@@ -42,7 +42,7 @@ type normalChanges struct {
 	etag        string
 	includeDocs bool
 	allDocs     bool
-	filter      func(doc any, req any) (bool, error)
+	filter      func(ctx context.Context, doc any, req any) (bool, error)
 }
 
 var _ driver.Changes = &normalChanges{}
@@ -264,9 +264,9 @@ func (d *db) newNormalChanges(ctx context.Context, opts options.Map) (*normalCha
 			if err != nil {
 				return nil, &internal.Error{Status: http.StatusInternalServerError, Err: err}
 			}
-			c.filter = func(doc, _ any) (bool, error) {
+			c.filter = func(ctx context.Context, doc, _ any) (bool, error) {
 				emitted = false
-				err := mapFunc(c.ctx, doc)
+				err := mapFunc(ctx, doc)
 				return emitted, err
 			}
 		}
@@ -357,7 +357,7 @@ func (c *normalChanges) Next(change *driver.Change) error {
 			Attachments: atts,
 		}
 		if c.filter != nil {
-			ok, err := c.filter(toMerge.toMap(), nil)
+			ok, err := c.filter(c.ctx, toMerge.toMap(), nil)
 			if err != nil {
 				return &internal.Error{Status: http.StatusInternalServerError, Err: err}
 			}

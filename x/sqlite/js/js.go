@@ -129,7 +129,13 @@ func (r *Runtime) Filter(code string) (FilterFunc, error) {
 type ReduceFunc func(ctx context.Context, keys [][2]any, values []any, rereduce bool) ([]any, error)
 
 // Reduce compiles the provided JavaScript code into a ReduceFunc.
+// It uses a zero-value Runtime (no timeout).
 func Reduce(code string) (ReduceFunc, error) {
+	return new(Runtime).Reduce(code)
+}
+
+// Reduce compiles the provided JavaScript code into a ReduceFunc.
+func (r *Runtime) Reduce(code string) (ReduceFunc, error) {
 	vm := goja.New()
 
 	if _, err := vm.RunString("const reduce = " + code); err != nil {
@@ -141,6 +147,11 @@ func Reduce(code string) (ReduceFunc, error) {
 	}
 
 	return func(ctx context.Context, keys [][2]any, values []any, rereduce bool) ([]any, error) {
+		if r.timeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(ctx, r.timeout)
+			defer cancel()
+		}
 		done := watchContext(ctx, vm)
 		defer done()
 		reduceValue, err := reduceFunc(goja.Undefined(), vm.ToValue(keys), vm.ToValue(values), vm.ToValue(rereduce))
@@ -172,7 +183,13 @@ func Reduce(code string) (ReduceFunc, error) {
 type ValidateFunc func(ctx context.Context, newDoc, oldDoc, userCtx, secObj any) error
 
 // Validate compiles the provided JavaScript code into a ValidateFunc.
+// It uses a zero-value Runtime (no timeout).
 func Validate(code string) (ValidateFunc, error) {
+	return new(Runtime).Validate(code)
+}
+
+// Validate compiles the provided JavaScript code into a ValidateFunc.
+func (r *Runtime) Validate(code string) (ValidateFunc, error) {
 	vm := goja.New()
 	if _, err := vm.RunString("const validate = " + code); err != nil {
 		return nil, fmt.Errorf("failed to compile validate function: %s", err)
@@ -182,6 +199,11 @@ func Validate(code string) (ValidateFunc, error) {
 		panic(fmt.Sprintf("expected validate to be a function, got %T", vm.Get("validate")))
 	}
 	return func(ctx context.Context, newDoc, oldDoc, userCtx, secObj any) error {
+		if r.timeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(ctx, r.timeout)
+			defer cancel()
+		}
 		done := watchContext(ctx, vm)
 		defer done()
 		_, err := validateFunc(goja.Undefined(), vm.ToValue(newDoc), vm.ToValue(oldDoc), vm.ToValue(userCtx), vm.ToValue(secObj))
@@ -236,7 +258,13 @@ func validateException(err error) error {
 type UpdateFunc func(ctx context.Context, doc, req any) (any, string, error)
 
 // Update compiles the provided JavaScript code into an UpdateFunc.
+// It uses a zero-value Runtime (no timeout).
 func Update(code string) (UpdateFunc, error) {
+	return new(Runtime).Update(code)
+}
+
+// Update compiles the provided JavaScript code into an UpdateFunc.
+func (r *Runtime) Update(code string) (UpdateFunc, error) {
 	vm := goja.New()
 	if _, err := vm.RunString("const update = " + code); err != nil {
 		return nil, fmt.Errorf("failed to compile update function: %s", err)
@@ -246,6 +274,11 @@ func Update(code string) (UpdateFunc, error) {
 		panic(fmt.Sprintf("expected update to be a function, got %T", vm.Get("update")))
 	}
 	return func(ctx context.Context, doc, req any) (any, string, error) {
+		if r.timeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(ctx, r.timeout)
+			defer cancel()
+		}
 		done := watchContext(ctx, vm)
 		defer done()
 		result, err := updateFunc(goja.Undefined(), vm.ToValue(doc), vm.ToValue(req))

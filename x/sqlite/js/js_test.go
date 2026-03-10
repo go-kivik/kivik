@@ -103,6 +103,38 @@ func TestReduce(t *testing.T) {
 	})
 }
 
+func TestRuntimeReduce(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		code    string
+		keys    [][2]any
+		values  []any
+		wantErr string
+	}
+
+	tests := testy.NewTable()
+	tests.Add("runtime timeout interrupts infinite loop without caller deadline", test{
+		code:    `function(keys, values, rereduce) { while(true) {} }`,
+		values:  []any{1.0},
+		wantErr: "context deadline exceeded",
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		r := New(50 * time.Millisecond)
+
+		fn, err := r.Reduce(tt.code)
+		if err != nil {
+			t.Fatalf("r.Reduce() error = %v", err)
+		}
+
+		_, err = fn(context.Background(), tt.keys, tt.values, false)
+		if !testy.ErrorMatchesRE(tt.wantErr, err) {
+			t.Fatalf("fn() error = %v, wantErr /%s/", err, tt.wantErr)
+		}
+	})
+}
+
 func TestFilter(t *testing.T) {
 	t.Parallel()
 
@@ -178,6 +210,39 @@ func TestRuntimeFilter(t *testing.T) {
 		}
 
 		_, err = fn(context.Background(), tt.doc, tt.req)
+		if !testy.ErrorMatchesRE(tt.wantErr, err) {
+			t.Fatalf("fn() error = %v, wantErr /%s/", err, tt.wantErr)
+		}
+	})
+}
+
+func TestRuntimeUpdate(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		code    string
+		doc     any
+		req     any
+		wantErr string
+	}
+
+	tests := testy.NewTable()
+	tests.Add("runtime timeout interrupts infinite loop without caller deadline", test{
+		code:    `function(doc, req) { while(true) {} }`,
+		doc:     map[string]any{"_id": "foo"},
+		req:     map[string]any{},
+		wantErr: "context deadline exceeded",
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		r := New(50 * time.Millisecond)
+
+		fn, err := r.Update(tt.code)
+		if err != nil {
+			t.Fatalf("r.Update() error = %v", err)
+		}
+
+		_, _, err = fn(context.Background(), tt.doc, tt.req)
 		if !testy.ErrorMatchesRE(tt.wantErr, err) {
 			t.Fatalf("fn() error = %v, wantErr /%s/", err, tt.wantErr)
 		}
@@ -364,6 +429,43 @@ func TestValidate(t *testing.T) {
 		}
 
 		err = fn(tt.ctx, tt.newDoc, tt.oldDoc, tt.userCtx, tt.secObj)
+		if !testy.ErrorMatchesRE(tt.wantErr, err) {
+			t.Fatalf("fn() error = %v, wantErr /%s/", err, tt.wantErr)
+		}
+	})
+}
+
+func TestRuntimeValidate(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		code    string
+		newDoc  any
+		oldDoc  any
+		userCtx any
+		secObj  any
+		wantErr string
+	}
+
+	tests := testy.NewTable()
+	tests.Add("runtime timeout interrupts infinite loop without caller deadline", test{
+		code:    `function(newDoc, oldDoc, userCtx, secObj) { while(true) {} }`,
+		newDoc:  map[string]any{"_id": "foo"},
+		oldDoc:  map[string]any{"_id": "foo"},
+		userCtx: map[string]any{},
+		secObj:  map[string]any{},
+		wantErr: "context deadline exceeded",
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		r := New(50 * time.Millisecond)
+
+		fn, err := r.Validate(tt.code)
+		if err != nil {
+			t.Fatalf("r.Validate() error = %v", err)
+		}
+
+		err = fn(context.Background(), tt.newDoc, tt.oldDoc, tt.userCtx, tt.secObj)
 		if !testy.ErrorMatchesRE(tt.wantErr, err) {
 			t.Fatalf("fn() error = %v, wantErr /%s/", err, tt.wantErr)
 		}

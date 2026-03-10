@@ -2,7 +2,6 @@
 
 ## Functionality
 
-- [ ] **`_approx_count_distinct` reduce function** — Not implemented.
 - [ ] **Map/reduce timeout** — No timeout handling for long-running JS
   functions.
 - [ ] **`revs=true` + attachments in OpenRevs** — Not implemented/tested.

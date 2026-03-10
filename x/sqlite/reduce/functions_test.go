@@ -14,6 +14,7 @@ package reduce
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -305,19 +306,9 @@ func TestSum(t *testing.T) {
 	})
 }
 
-func TestApproxCountDistinct(t *testing.T) {
-	t.Parallel()
-
-	keys := [][2]any{
-		{"a", "doc1"},
-		{"b", "doc2"},
-		{"c", "doc3"},
-		{"d", "doc4"},
-		{"e", "doc5"},
-	}
-	values := []any{nil, nil, nil, nil, nil}
-
-	got, err := ApproxCountDistinct(keys, values, false)
+func approxCountDistinct(t *testing.T, keys [][2]any, values []any, rereduce bool) float64 {
+	t.Helper()
+	got, err := ApproxCountDistinct(keys, values, rereduce)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -332,7 +323,98 @@ func TestApproxCountDistinct(t *testing.T) {
 	if err := json.Unmarshal(jsonBytes, &estimate); err != nil {
 		t.Fatalf("result did not marshal to a number: %s", string(jsonBytes))
 	}
-	if estimate < 4 || estimate > 6 {
-		t.Errorf("expected estimate near 5, got %f", estimate)
-	}
+	return estimate
+}
+
+func TestApproxCountDistinct(t *testing.T) {
+	t.Parallel()
+
+	t.Run("5 distinct keys", func(t *testing.T) {
+		t.Parallel()
+		keys := [][2]any{
+			{"a", "doc1"},
+			{"b", "doc2"},
+			{"c", "doc3"},
+			{"d", "doc4"},
+			{"e", "doc5"},
+		}
+		values := []any{nil, nil, nil, nil, nil}
+
+		estimate := approxCountDistinct(t, keys, values, false)
+		if estimate < 4 || estimate > 6 {
+			t.Errorf("expected estimate near 5, got %f", estimate)
+		}
+	})
+
+	t.Run("duplicate keys do not increase count", func(t *testing.T) {
+		t.Parallel()
+		keys := [][2]any{
+			{"a", "doc1"},
+			{"a", "doc2"},
+			{"a", "doc3"},
+			{"b", "doc4"},
+			{"b", "doc5"},
+		}
+		values := []any{nil, nil, nil, nil, nil}
+
+		estimate := approxCountDistinct(t, keys, values, false)
+		if estimate < 1 || estimate > 3 {
+			t.Errorf("expected estimate near 2, got %f", estimate)
+		}
+	})
+
+	t.Run("rereduce merges HLL sketches", func(t *testing.T) {
+		t.Parallel()
+		keys1 := [][2]any{{"a", "doc1"}, {"b", "doc2"}, {"c", "doc3"}}
+		keys2 := [][2]any{{"d", "doc4"}, {"e", "doc5"}}
+
+		got1, err := ApproxCountDistinct(keys1, make([]any, 3), false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got2, err := ApproxCountDistinct(keys2, make([]any, 2), false)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		estimate := approxCountDistinct(t, nil, []any{got1[0], got2[0]}, true)
+		if estimate < 4 || estimate > 6 {
+			t.Errorf("expected estimate near 5, got %f", estimate)
+		}
+	})
+
+	t.Run("rereduce with overlapping keys", func(t *testing.T) {
+		t.Parallel()
+		keys1 := [][2]any{{"a", "doc1"}, {"b", "doc2"}, {"c", "doc3"}}
+		keys2 := [][2]any{{"b", "doc4"}, {"c", "doc5"}, {"d", "doc6"}}
+
+		got1, err := ApproxCountDistinct(keys1, make([]any, 3), false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got2, err := ApproxCountDistinct(keys2, make([]any, 3), false)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		estimate := approxCountDistinct(t, nil, []any{got1[0], got2[0]}, true)
+		if estimate < 3 || estimate > 5 {
+			t.Errorf("expected estimate near 4, got %f", estimate)
+		}
+	})
+
+	t.Run("larger dataset", func(t *testing.T) {
+		t.Parallel()
+		n := 1000
+		keys := make([][2]any, n)
+		values := make([]any, n)
+		for i := range n {
+			keys[i] = [2]any{fmt.Sprintf("key-%d", i), fmt.Sprintf("doc-%d", i)}
+		}
+
+		estimate := approxCountDistinct(t, keys, values, false)
+		if estimate < 850 || estimate > 1150 {
+			t.Errorf("expected estimate near 1000 (±15%%), got %f", estimate)
+		}
+	})
 }

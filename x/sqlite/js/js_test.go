@@ -151,6 +151,39 @@ func TestFilter(t *testing.T) {
 	})
 }
 
+func TestRuntimeFilter(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		code    string
+		doc     any
+		req     any
+		wantErr string
+	}
+
+	tests := testy.NewTable()
+	tests.Add("runtime timeout interrupts infinite loop without caller deadline", test{
+		code:    `function(doc, req) { while(true) {} }`,
+		doc:     map[string]any{"_id": "foo"},
+		req:     map[string]any{},
+		wantErr: "context deadline exceeded",
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		r := New(50 * time.Millisecond)
+
+		fn, err := r.Filter(tt.code)
+		if err != nil {
+			t.Fatalf("r.Filter() error = %v", err)
+		}
+
+		_, err = fn(context.Background(), tt.doc, tt.req)
+		if !testy.ErrorMatchesRE(tt.wantErr, err) {
+			t.Fatalf("fn() error = %v, wantErr /%s/", err, tt.wantErr)
+		}
+	})
+}
+
 func TestUpdate(t *testing.T) {
 	t.Parallel()
 

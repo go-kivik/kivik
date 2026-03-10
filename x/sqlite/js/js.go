@@ -87,7 +87,13 @@ func (r *Runtime) Map(code string, emit func(key, value any)) (MapFunc, error) {
 type FilterFunc func(ctx context.Context, doc, req any) (bool, error)
 
 // Filter compiles the provided JavaScript code into a FilterFunc.
+// It uses a zero-value Runtime (no timeout).
 func Filter(code string) (FilterFunc, error) {
+	return new(Runtime).Filter(code)
+}
+
+// Filter compiles the provided JavaScript code into a FilterFunc.
+func (r *Runtime) Filter(code string) (FilterFunc, error) {
 	vm := goja.New()
 	if _, err := vm.RunString("const filter = " + code); err != nil {
 		return nil, fmt.Errorf("failed to compile filter function: %s", err)
@@ -97,6 +103,11 @@ func Filter(code string) (FilterFunc, error) {
 		panic(fmt.Sprintf("expected filter to be a function, got %T", vm.Get("filter")))
 	}
 	return func(ctx context.Context, doc, req any) (bool, error) {
+		if r.timeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(ctx, r.timeout)
+			defer cancel()
+		}
 		done := watchContext(ctx, vm)
 		defer done()
 		result, err := filterFunc(goja.Undefined(), vm.ToValue(doc), vm.ToValue(req))

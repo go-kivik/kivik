@@ -19,9 +19,21 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"time"
 
 	"github.com/dop251/goja"
 )
+
+// Runtime holds configuration for JavaScript execution.
+type Runtime struct {
+	timeout time.Duration
+}
+
+// New creates a new Runtime with the given timeout. If timeout is zero, no
+// timeout is enforced and cancellation depends entirely on the caller's context.
+func New(timeout time.Duration) *Runtime {
+	return &Runtime{timeout: timeout}
+}
 
 // MapFunc is the Go representation of a CouchDB [map function]. Exceptions are
 // converted to errors. The context controls cancellation; if the context is
@@ -31,8 +43,14 @@ import (
 type MapFunc func(ctx context.Context, doc any) error
 
 // Map compiles the provided JavaScript code into a MapFunc, and makes emit
-// available to the JavaScript code.
+// available to the JavaScript code. It uses a zero-value Runtime (no timeout).
 func Map(code string, emit func(key, value any)) (MapFunc, error) {
+	return new(Runtime).Map(code, emit)
+}
+
+// Map compiles the provided JavaScript code into a MapFunc, and makes emit
+// available to the JavaScript code.
+func (r *Runtime) Map(code string, emit func(key, value any)) (MapFunc, error) {
 	vm := goja.New()
 
 	if err := vm.Set("emit", emit); err != nil {
@@ -49,6 +67,11 @@ func Map(code string, emit func(key, value any)) (MapFunc, error) {
 	}
 
 	return func(ctx context.Context, doc any) error {
+		if r.timeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(ctx, r.timeout)
+			defer cancel()
+		}
 		done := watchContext(ctx, vm)
 		defer done()
 		_, err := mapFunc(goja.Undefined(), vm.ToValue(doc))

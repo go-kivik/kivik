@@ -259,6 +259,39 @@ func TestUpdate(t *testing.T) {
 	})
 }
 
+func TestRuntimeMap(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		code    string
+		emit    func(key, value any)
+		doc     any
+		wantErr string
+	}
+
+	tests := testy.NewTable()
+	tests.Add("runtime timeout interrupts infinite loop without caller deadline", test{
+		code:    `function(doc) { while(true) {} }`,
+		emit:    func(key, value any) {},
+		doc:     map[string]any{"_id": "foo"},
+		wantErr: "context deadline exceeded",
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		r := New(50 * time.Millisecond)
+
+		fn, err := r.Map(tt.code, tt.emit)
+		if err != nil {
+			t.Fatalf("r.Map() error = %v", err)
+		}
+
+		err = fn(context.Background(), tt.doc)
+		if !testy.ErrorMatchesRE(tt.wantErr, err) {
+			t.Fatalf("fn() error = %v, wantErr /%s/", err, tt.wantErr)
+		}
+	})
+}
+
 func TestValidate(t *testing.T) {
 	t.Parallel()
 

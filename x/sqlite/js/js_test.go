@@ -14,10 +14,48 @@ package js
 
 import (
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"gitlab.com/flimzy/testy"
 )
+
+func TestMap(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		code           string
+		emit           func(key, value any)
+		timeout        time.Duration
+		doc            any
+		wantCompileErr string
+		wantErr        string
+	}
+
+	tests := testy.NewTable()
+	tests.Add("infinite loop times out", test{
+		code:    `function(doc) { while(true) {} }`,
+		emit:    func(key, value any) {},
+		timeout: 50 * time.Millisecond,
+		doc:     map[string]any{"_id": "foo"},
+		wantErr: "timeout",
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		fn, err := jsMap(tt.code, tt.emit, tt.timeout)
+		if !testy.ErrorMatchesRE(tt.wantCompileErr, err) {
+			t.Fatalf("Map() error = %v, wantCompileErr /%s/", err, tt.wantCompileErr)
+		}
+		if err != nil {
+			return
+		}
+
+		err = fn(tt.doc)
+		if !testy.ErrorMatchesRE(tt.wantErr, err) {
+			t.Fatalf("fn() error = %v, wantErr /%s/", err, tt.wantErr)
+		}
+	})
+}
 
 func TestUpdate(t *testing.T) {
 	t.Parallel()

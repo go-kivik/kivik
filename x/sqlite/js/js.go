@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"time"
 
 	"github.com/dop251/goja"
 )
@@ -28,9 +29,22 @@ import (
 // [map function]: https://docs.couchdb.org/en/stable/ddocs/views/nosql.html#map-functions
 type MapFunc func(doc any) error
 
+// defaultTimeout is the maximum time a single JavaScript function invocation
+// may run before being interrupted. This matches CouchDB's default
+// [os_process_timeout] setting.
+//
+// [os_process_timeout]: https://docs.couchdb.org/en/stable/config/couchdb.html#couchdb/os_process_timeout
+const defaultTimeout = 5 * time.Second
+
 // Map compiles the provided JavaScript code into a MapFunc, and makes emit
-// available to the JavaScript code.
+// available to the JavaScript code. Each invocation of the returned function
+// is subject to a timeout; if the JavaScript function does not return within
+// the timeout, the VM is interrupted and an error is returned.
 func Map(code string, emit func(key, value any)) (MapFunc, error) {
+	return jsMap(code, emit, defaultTimeout)
+}
+
+func jsMap(code string, emit func(key, value any), timeout time.Duration) (MapFunc, error) {
 	vm := goja.New()
 
 	if err := vm.Set("emit", emit); err != nil {
@@ -47,10 +61,17 @@ func Map(code string, emit func(key, value any)) (MapFunc, error) {
 	}
 
 	return func(doc any) error {
+		timer := time.AfterFunc(timeout, func() {
+			vm.Interrupt(errTimeout)
+		})
+		defer timer.Stop()
+		defer vm.ClearInterrupt()
 		_, err := mapFunc(goja.Undefined(), vm.ToValue(doc))
 		return exception(err)
 	}, nil
 }
+
+var errTimeout = errors.New("timeout")
 
 // FilterFunc represents a CouchDB [filter function]. Exceptions are converted
 // to errors.

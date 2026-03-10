@@ -195,9 +195,11 @@ func validateException(err error) error {
 
 // UpdateFunc represents a CouchDB [update function]. It accepts a document and
 // a request object and returns the updated document and a response string.
+// The context controls cancellation; if the context is cancelled, the VM is
+// interrupted and the context error is returned.
 //
 // [update function]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#update-functions
-type UpdateFunc func(doc, req any) (any, string, error)
+type UpdateFunc func(ctx context.Context, doc, req any) (any, string, error)
 
 // Update compiles the provided JavaScript code into an UpdateFunc.
 func Update(code string) (UpdateFunc, error) {
@@ -209,7 +211,9 @@ func Update(code string) (UpdateFunc, error) {
 	if !ok {
 		panic(fmt.Sprintf("expected update to be a function, got %T", vm.Get("update")))
 	}
-	return func(doc, req any) (any, string, error) {
+	return func(ctx context.Context, doc, req any) (any, string, error) {
+		done := watchContext(ctx, vm)
+		defer done()
 		result, err := updateFunc(goja.Undefined(), vm.ToValue(doc), vm.ToValue(req))
 		if err != nil {
 			return nil, "", exception(err)

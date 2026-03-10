@@ -156,6 +156,7 @@ func TestUpdate(t *testing.T) {
 
 	type test struct {
 		code           string
+		ctx            context.Context //nolint:containedctx // test struct needs ctx to pass to function under test
 		doc            any
 		req            any
 		wantNewDoc     any
@@ -210,6 +211,17 @@ func TestUpdate(t *testing.T) {
 		wantNewDoc: map[string]any{"_id": "foo"},
 		wantResp:   "",
 	})
+	tests.Add("cancelled context interrupts infinite loop", func() test {
+		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+		t.Cleanup(cancel)
+		return test{
+			code:    `function(doc, req) { while(true) {} }`,
+			ctx:     ctx,
+			doc:     map[string]any{"_id": "foo"},
+			req:     map[string]any{},
+			wantErr: "context deadline exceeded",
+		}
+	}())
 	tests.Add("null doc input", test{
 		code:       `function(doc, req) { return [{"created": true}, "created"]; }`,
 		doc:        nil,
@@ -227,7 +239,11 @@ func TestUpdate(t *testing.T) {
 			return
 		}
 
-		gotNewDoc, gotResp, err := fn(tt.doc, tt.req)
+		if tt.ctx == nil {
+			tt.ctx = context.Background()
+		}
+
+		gotNewDoc, gotResp, err := fn(tt.ctx, tt.doc, tt.req)
 		if !testy.ErrorMatchesRE(tt.wantErr, err) {
 			t.Fatalf("fn() error = %v, wantErr /%s/", err, tt.wantErr)
 		}

@@ -96,7 +96,7 @@ func (d *db) Update(ctx context.Context, ddoc, funcName, docID string, doc any, 
 		},
 		"path": []string{d.name, "_design", ddocName, "_update", funcName, docID},
 	}
-	updatedDoc, _, err := updateFunc(existingDocMap, req)
+	updatedDoc, _, err := updateFunc(ctx, existingDocMap, req)
 	if err != nil {
 		return "", err
 	}

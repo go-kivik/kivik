@@ -13,6 +13,7 @@
 package reduce
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
@@ -32,7 +33,7 @@ import (
 // Count is the built-in reduce function, [_count].
 //
 // [_count]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#count
-func Count(_ [][2]any, values []any, rereduce bool) ([]any, error) {
+func Count(_ context.Context, _ [][2]any, values []any, rereduce bool) ([]any, error) {
 	if !rereduce {
 		return []any{float64(len(values))}, nil
 	}
@@ -48,7 +49,7 @@ func Count(_ [][2]any, values []any, rereduce bool) ([]any, error) {
 // Sum is the built-in reduce function, [_sum].
 //
 // [_sum]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#sum
-func Sum(_ [][2]any, values []any, _ bool) ([]any, error) {
+func Sum(_ context.Context, _ [][2]any, values []any, _ bool) ([]any, error) {
 	var totals []float64
 	for _, value := range values {
 		switch v := value.(type) {
@@ -210,7 +211,7 @@ func flattenStats(values []any) []stats {
 // Stats is the built-in reduce function, [_stats].
 //
 // [_stats]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#stats
-func Stats(_ [][2]any, values []any, rereduce bool) ([]any, error) {
+func Stats(_ context.Context, _ [][2]any, values []any, rereduce bool) ([]any, error) {
 	if len(values) == 0 {
 		return nil, &internal.Error{
 			Status:  http.StatusInternalServerError,
@@ -393,7 +394,7 @@ func hash64(data []byte) uint64 {
 // distinct keys.
 //
 // [_approx_count_distinct]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#approx_count_distinct
-func ApproxCountDistinct(keys [][2]any, values []any, rereduce bool) ([]any, error) {
+func ApproxCountDistinct(_ context.Context, keys [][2]any, values []any, rereduce bool) ([]any, error) {
 	h := &hll{}
 	if rereduce {
 		for _, v := range values {
@@ -434,8 +435,8 @@ func ParseFunc(javascript string, logger *log.Logger) (Func, error) {
 		if err != nil {
 			return nil, err
 		}
-		return func(keys [][2]any, values []any, rereduce bool) ([]any, error) {
-			ret, err := reduceFunc(keys, values, rereduce)
+		return func(ctx context.Context, keys [][2]any, values []any, rereduce bool) ([]any, error) {
+			ret, err := reduceFunc(ctx, keys, values, rereduce)
 			// According to CouchDB reference implementation, when a user-defined
 			// reduce function throws an exception, the error is logged and the
 			// return value is set to null.

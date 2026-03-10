@@ -13,6 +13,7 @@
 package reduce
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -222,7 +223,7 @@ func TestStats(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
-		got, err := Stats(nil, tt.values, tt.rereduce)
+		got, err := Stats(context.Background(), nil, tt.values, tt.rereduce)
 		if !testy.ErrorMatchesRE(tt.wantErr, err) {
 			t.Errorf("unexpected error: got %v, want /%s/", err, tt.wantErr)
 		}
@@ -293,7 +294,7 @@ func TestSum(t *testing.T) {
 	})
 
 	tests.Run(t, func(t *testing.T, tt test) {
-		got, err := Sum(nil, tt.values, tt.rereduce)
+		got, err := Sum(context.Background(), nil, tt.values, tt.rereduce)
 		if !testy.ErrorMatchesRE(tt.wantErr, err) {
 			t.Errorf("unexpected error: got %v, want /%s/", err, tt.wantErr)
 		}
@@ -308,7 +309,7 @@ func TestSum(t *testing.T) {
 
 func approxCountDistinct(t *testing.T, keys [][2]any, values []any, rereduce bool) float64 {
 	t.Helper()
-	got, err := ApproxCountDistinct(keys, values, rereduce)
+	got, err := ApproxCountDistinct(context.Background(), keys, values, rereduce)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -368,11 +369,11 @@ func TestApproxCountDistinct(t *testing.T) {
 		keys1 := [][2]any{{"a", "doc1"}, {"b", "doc2"}, {"c", "doc3"}}
 		keys2 := [][2]any{{"d", "doc4"}, {"e", "doc5"}}
 
-		got1, err := ApproxCountDistinct(keys1, make([]any, 3), false)
+		got1, err := ApproxCountDistinct(context.Background(), keys1, make([]any, 3), false)
 		if err != nil {
 			t.Fatal(err)
 		}
-		got2, err := ApproxCountDistinct(keys2, make([]any, 2), false)
+		got2, err := ApproxCountDistinct(context.Background(), keys2, make([]any, 2), false)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -388,11 +389,11 @@ func TestApproxCountDistinct(t *testing.T) {
 		keys1 := [][2]any{{"a", "doc1"}, {"b", "doc2"}, {"c", "doc3"}}
 		keys2 := [][2]any{{"b", "doc4"}, {"c", "doc5"}, {"d", "doc6"}}
 
-		got1, err := ApproxCountDistinct(keys1, make([]any, 3), false)
+		got1, err := ApproxCountDistinct(context.Background(), keys1, make([]any, 3), false)
 		if err != nil {
 			t.Fatal(err)
 		}
-		got2, err := ApproxCountDistinct(keys2, make([]any, 3), false)
+		got2, err := ApproxCountDistinct(context.Background(), keys2, make([]any, 3), false)
 		if err != nil {
 			t.Fatal(err)
 		}

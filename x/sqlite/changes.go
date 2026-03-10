@@ -35,6 +35,7 @@ import (
 )
 
 type normalChanges struct {
+	ctx         context.Context
 	rows        *sql.Rows
 	pending     int64
 	lastSeq     string
@@ -74,6 +75,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts options.Map) (*normalCha
 	}
 
 	c := &normalChanges{
+		ctx:     ctx,
 		allDocs: opts.Style() == options.StyleAllDocs,
 	}
 
@@ -264,7 +266,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts options.Map) (*normalCha
 			}
 			c.filter = func(doc, _ any) (bool, error) {
 				emitted = false
-				err := mapFunc(doc)
+				err := mapFunc(c.ctx, doc)
 				return emitted, err
 			}
 		}

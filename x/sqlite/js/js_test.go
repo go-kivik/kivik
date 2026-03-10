@@ -13,6 +13,7 @@
 package js
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -26,23 +27,27 @@ func TestMap(t *testing.T) {
 	type test struct {
 		code           string
 		emit           func(key, value any)
-		timeout        time.Duration
+		ctx            context.Context //nolint:containedctx // test struct needs ctx to pass to function under test
 		doc            any
 		wantCompileErr string
 		wantErr        string
 	}
 
 	tests := testy.NewTable()
-	tests.Add("infinite loop times out", test{
-		code:    `function(doc) { while(true) {} }`,
-		emit:    func(key, value any) {},
-		timeout: 50 * time.Millisecond,
-		doc:     map[string]any{"_id": "foo"},
-		wantErr: "timeout",
-	})
+	tests.Add("cancelled context interrupts infinite loop", func() test {
+		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+		t.Cleanup(cancel)
+		return test{
+			code:    `function(doc) { while(true) {} }`,
+			emit:    func(key, value any) {},
+			ctx:     ctx,
+			doc:     map[string]any{"_id": "foo"},
+			wantErr: "context deadline exceeded",
+		}
+	}())
 
 	tests.Run(t, func(t *testing.T, tt test) {
-		fn, err := jsMap(tt.code, tt.emit, tt.timeout)
+		fn, err := Map(tt.code, tt.emit)
 		if !testy.ErrorMatchesRE(tt.wantCompileErr, err) {
 			t.Fatalf("Map() error = %v, wantCompileErr /%s/", err, tt.wantCompileErr)
 		}
@@ -50,7 +55,48 @@ func TestMap(t *testing.T) {
 			return
 		}
 
-		err = fn(tt.doc)
+		err = fn(tt.ctx, tt.doc)
+		if !testy.ErrorMatchesRE(tt.wantErr, err) {
+			t.Fatalf("fn() error = %v, wantErr /%s/", err, tt.wantErr)
+		}
+	})
+}
+
+func TestReduce(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		code           string
+		ctx            context.Context //nolint:containedctx // test struct needs ctx to pass to function under test
+		keys           [][2]any
+		values         []any
+		rereduce       bool
+		wantCompileErr string
+		wantErr        string
+	}
+
+	tests := testy.NewTable()
+	tests.Add("cancelled context interrupts infinite loop", func() test {
+		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+		t.Cleanup(cancel)
+		return test{
+			code:    `function(keys, values, rereduce) { while(true) {} }`,
+			ctx:     ctx,
+			values:  []any{1.0},
+			wantErr: "context deadline exceeded",
+		}
+	}())
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		fn, err := Reduce(tt.code)
+		if !testy.ErrorMatchesRE(tt.wantCompileErr, err) {
+			t.Fatalf("Reduce() error = %v, wantCompileErr /%s/", err, tt.wantCompileErr)
+		}
+		if err != nil {
+			return
+		}
+
+		_, err = fn(tt.ctx, tt.keys, tt.values, tt.rereduce)
 		if !testy.ErrorMatchesRE(tt.wantErr, err) {
 			t.Fatalf("fn() error = %v, wantErr /%s/", err, tt.wantErr)
 		}

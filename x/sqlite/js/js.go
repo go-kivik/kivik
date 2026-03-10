@@ -14,37 +14,25 @@
 package js
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"reflect"
-	"time"
 
 	"github.com/dop251/goja"
 )
 
 // MapFunc is the Go representation of a CouchDB [map function]. Exceptions are
-// converted to errors.
+// converted to errors. The context controls cancellation; if the context is
+// cancelled, the VM is interrupted and the context error is returned.
 //
 // [map function]: https://docs.couchdb.org/en/stable/ddocs/views/nosql.html#map-functions
-type MapFunc func(doc any) error
-
-// defaultTimeout is the maximum time a single JavaScript function invocation
-// may run before being interrupted. This matches CouchDB's default
-// [os_process_timeout] setting.
-//
-// [os_process_timeout]: https://docs.couchdb.org/en/stable/config/couchdb.html#couchdb/os_process_timeout
-const defaultTimeout = 5 * time.Second
+type MapFunc func(ctx context.Context, doc any) error
 
 // Map compiles the provided JavaScript code into a MapFunc, and makes emit
-// available to the JavaScript code. Each invocation of the returned function
-// is subject to a timeout; if the JavaScript function does not return within
-// the timeout, the VM is interrupted and an error is returned.
+// available to the JavaScript code.
 func Map(code string, emit func(key, value any)) (MapFunc, error) {
-	return jsMap(code, emit, defaultTimeout)
-}
-
-func jsMap(code string, emit func(key, value any), timeout time.Duration) (MapFunc, error) {
 	vm := goja.New()
 
 	if err := vm.Set("emit", emit); err != nil {
@@ -60,18 +48,13 @@ func jsMap(code string, emit func(key, value any), timeout time.Duration) (MapFu
 		panic(fmt.Sprintf("expected map to be a function, got %T", vm.Get("map")))
 	}
 
-	return func(doc any) error {
-		timer := time.AfterFunc(timeout, func() {
-			vm.Interrupt(errTimeout)
-		})
-		defer timer.Stop()
-		defer vm.ClearInterrupt()
+	return func(ctx context.Context, doc any) error {
+		done := watchContext(ctx, vm)
+		defer done()
 		_, err := mapFunc(goja.Undefined(), vm.ToValue(doc))
 		return exception(err)
 	}, nil
 }
-
-var errTimeout = errors.New("timeout")
 
 // FilterFunc represents a CouchDB [filter function]. Exceptions are converted
 // to errors.
@@ -103,10 +86,10 @@ func Filter(code string) (FilterFunc, error) {
 // ReduceFunc is the Go representation of a CouchDB [reduce function]. Exceptions
 // are converted to errors. The JavaScript function may return either a single
 // item, or an array.  If a single item is returned, it is wrapped in an array
-// before being returned to the caller.
+// before being returned to the caller. The context controls cancellation.
 //
 // [reduce function]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#reduce-and-rereduce-functions
-type ReduceFunc func(keys [][2]any, values []any, rereduce bool) ([]any, error)
+type ReduceFunc func(ctx context.Context, keys [][2]any, values []any, rereduce bool) ([]any, error)
 
 // Reduce compiles the provided JavaScript code into a ReduceFunc.
 func Reduce(code string) (ReduceFunc, error) {
@@ -120,7 +103,9 @@ func Reduce(code string) (ReduceFunc, error) {
 		return nil, fmt.Errorf("expected reduce to be a function, got %T", vm.Get("reduce"))
 	}
 
-	return func(keys [][2]any, values []any, rereduce bool) ([]any, error) {
+	return func(ctx context.Context, keys [][2]any, values []any, rereduce bool) ([]any, error) {
+		done := watchContext(ctx, vm)
+		defer done()
 		reduceValue, err := reduceFunc(goja.Undefined(), vm.ToValue(keys), vm.ToValue(values), vm.ToValue(rereduce))
 		if err != nil {
 			return nil, exception(err)
@@ -234,15 +219,42 @@ func Update(code string) (UpdateFunc, error) {
 	}, nil
 }
 
-// exception converts a JavaScript exception to a Go error.
+// watchContext starts a goroutine that interrupts the VM when the context is
+// done. The returned function must be called (via defer) to clean up. It also
+// calls ClearInterrupt to ensure the VM is reusable.
+func watchContext(ctx context.Context, vm *goja.Runtime) func() {
+	ch := make(chan struct{})
+	go func() {
+		select {
+		case <-ctx.Done():
+			vm.Interrupt(ctx.Err())
+		case <-ch:
+		}
+	}()
+	return func() {
+		close(ch)
+		vm.ClearInterrupt()
+	}
+}
+
+// exception converts a JavaScript exception to a Go error. If the error is
+// a [goja.InterruptedError], the underlying cause (e.g. context error) is
+// unwrapped and returned directly.
 func exception(err error) error {
 	if err == nil {
 		return nil
+	}
+	var interrupted *goja.InterruptedError
+	if errors.As(err, &interrupted) {
+		if cause, ok := interrupted.Value().(error); ok {
+			return cause
+		}
+		return interrupted
 	}
 	var exc *goja.Exception
 	if errors.As(err, &exc) {
 		return errors.New(exc.String())
 	}
-	// should never happen that we get a non-exception error
+	// goja should only return *Exception or *InterruptedError
 	return err
 }

@@ -271,7 +271,7 @@ func (d *db) performQuery(
 				_ = results.Close() //nolint:sqlclosecheck // invalid option specified for reduce, so abort the query
 				return nil, &internal.Error{Status: http.StatusBadRequest, Message: "conflicts is invalid for reduce"}
 			}
-			result, err := d.reduce(results, meta.reduceFuncJS, vopts.ReduceGroupLevel())
+			result, err := d.reduce(ctx, results, meta.reduceFuncJS, vopts.ReduceGroupLevel())
 			if err != nil {
 				return nil, err
 			}
@@ -410,15 +410,15 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *op
 		}
 	}
 
-	result, err := d.reduce(results, meta.reduceFuncJS, vopts.ReduceGroupLevel())
+	result, err := d.reduce(ctx, results, meta.reduceFuncJS, vopts.ReduceGroupLevel())
 	if err != nil {
 		return nil, err
 	}
 	return metaReduced{Rows: result, meta: meta}, nil
 }
 
-func (d *db) reduce(results *sql.Rows, reduceFuncJS string, groupLevel int) (driver.Rows, error) {
-	return reduce.Reduce(&reduceRowIter{results: results}, reduceFuncJS, d.logger, groupLevel)
+func (d *db) reduce(ctx context.Context, results *sql.Rows, reduceFuncJS string, groupLevel int) (driver.Rows, error) {
+	return reduce.Reduce(ctx, &reduceRowIter{results: results}, reduceFuncJS, d.logger, groupLevel)
 }
 
 const batchSize = 100
@@ -587,7 +587,7 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 
 		emitID = full.ID
 		emitRev = rev
-		if err := mapFunc(full.toMap()); err != nil {
+		if err := mapFunc(ctx, full.toMap()); err != nil {
 			d.logger.Printf("map function threw exception for %s: %s", full.ID, err)
 			batch.delete(full.ID, rev)
 		}

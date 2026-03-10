@@ -15,7 +15,10 @@ package reduce
 import (
 	"encoding/json"
 	"fmt"
+	"hash/fnv"
 	"log"
+	"math"
+	"math/bits"
 	"net/http"
 	"slices"
 	"strings"
@@ -330,6 +333,85 @@ func rereduceStatsFloatArray(values [][]stats) []any {
 	return []any{result}
 }
 
+const hllPrecision = 14
+
+// hll is a HyperLogLog sketch for approximate distinct counting.
+type hll struct {
+	Registers [1 << hllPrecision]uint8
+}
+
+// MarshalJSON returns the HLL's cardinality estimate as a JSON number.
+func (h *hll) MarshalJSON() ([]byte, error) {
+	return json.Marshal(h.Estimate())
+}
+
+// Estimate returns the approximate cardinality.
+func (h *hll) Estimate() float64 {
+	m := float64(len(h.Registers))
+	var harmonicSum float64
+	zeros := 0
+	for _, val := range h.Registers {
+		harmonicSum += 1.0 / float64(uint64(1)<<val)
+		if val == 0 {
+			zeros++
+		}
+	}
+	alpha := 0.7213 / (1 + 1.079/m)
+	estimate := alpha * m * m / harmonicSum
+	if estimate <= 2.5*m && zeros > 0 {
+		estimate = m * math.Log(m/float64(zeros))
+	}
+	return math.Round(estimate)
+}
+
+func (h *hll) add(data []byte) {
+	hash := hash64(data)
+	idx := hash >> (64 - hllPrecision)
+	w := hash<<hllPrecision | (1 << (hllPrecision - 1))
+	rho := uint8(bits.LeadingZeros64(w)) + 1
+	if rho > h.Registers[idx] {
+		h.Registers[idx] = rho
+	}
+}
+
+func (h *hll) merge(other *hll) {
+	for i, val := range other.Registers {
+		if val > h.Registers[i] {
+			h.Registers[i] = val
+		}
+	}
+}
+
+func hash64(data []byte) uint64 {
+	h := fnv.New64a()
+	h.Write(data)
+	return h.Sum64()
+}
+
+// ApproxCountDistinct is the built-in reduce function,
+// [_approx_count_distinct]. It uses HyperLogLog to estimate the number of
+// distinct keys.
+//
+// [_approx_count_distinct]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#approx_count_distinct
+func ApproxCountDistinct(keys [][2]any, values []any, rereduce bool) ([]any, error) {
+	h := &hll{}
+	if rereduce {
+		for _, v := range values {
+			other, ok := v.(*hll)
+			if !ok {
+				continue
+			}
+			h.merge(other)
+		}
+		return []any{h}, nil
+	}
+	for _, key := range keys {
+		keyBytes, _ := json.Marshal(key[0])
+		h.add(keyBytes)
+	}
+	return []any{h}, nil
+}
+
 // ParseFunc parses the passed javascript string, and returns a Go function that
 // will execute it.  If the input is empty, nil is returned. If the input is a
 // string that corresponds to one of the built-in function names (i.e. '_sum',
@@ -345,6 +427,8 @@ func ParseFunc(javascript string, logger *log.Logger) (Func, error) {
 		return Sum, nil
 	case "_stats":
 		return Stats, nil
+	case "_approx_count_distinct":
+		return ApproxCountDistinct, nil
 	default:
 		reduceFunc, err := js.Reduce(javascript)
 		if err != nil {

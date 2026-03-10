@@ -13,6 +13,7 @@
 package reduce
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -302,4 +303,36 @@ func TestSum(t *testing.T) {
 			t.Errorf("unexpected result (-want +got):\n%s", d)
 		}
 	})
+}
+
+func TestApproxCountDistinct(t *testing.T) {
+	t.Parallel()
+
+	keys := [][2]any{
+		{"a", "doc1"},
+		{"b", "doc2"},
+		{"c", "doc3"},
+		{"d", "doc4"},
+		{"e", "doc5"},
+	}
+	values := []any{nil, nil, nil, nil, nil}
+
+	got, err := ApproxCountDistinct(keys, values, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(got))
+	}
+	jsonBytes, err := json.Marshal(got[0])
+	if err != nil {
+		t.Fatalf("failed to marshal result: %v", err)
+	}
+	var estimate float64
+	if err := json.Unmarshal(jsonBytes, &estimate); err != nil {
+		t.Fatalf("result did not marshal to a number: %s", string(jsonBytes))
+	}
+	if estimate < 4 || estimate > 6 {
+		t.Errorf("expected estimate near 5, got %f", estimate)
+	}
 }

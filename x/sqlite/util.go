@@ -162,7 +162,7 @@ func (d *db) createRev(ctx context.Context, tx *sql.Tx, data *docData, curRev re
 	if err := d.createDocAttachments(ctx, data, tx, r, &curRev); err != nil {
 		return r, err
 	}
-	err = d.updateDesignDoc(ctx, tx, r, data)
+	err = d.updateDesignDoc(ctx, tx, r, curRev, data)
 	return r, err
 }
 

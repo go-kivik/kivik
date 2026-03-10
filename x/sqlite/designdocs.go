@@ -20,10 +20,14 @@ import (
 	internal "github.com/go-kivik/kivik/v4/int/errors"
 )
 
-func (d *db) updateDesignDoc(ctx context.Context, tx *sql.Tx, rev revision, data *docData) error {
+func (d *db) updateDesignDoc(ctx context.Context, tx *sql.Tx, rev revision, curRev revision, data *docData) error {
 	if !data.IsDesignDoc() {
 		return nil
 	}
+	if err := d.dropMapTables(ctx, tx, data.ID, curRev); err != nil {
+		return err
+	}
+
 	stmt, err := tx.PrepareContext(ctx, d.query(`
 		INSERT INTO {{ .Design }} (id, rev, rev_id, language, func_type, func_name, func_body, auto_update, include_design, collation, local_seq)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
@@ -66,6 +70,44 @@ func (d *db) updateDesignDoc(ctx context.Context, tx *sql.Tx, rev revision, data
 	}
 	if data.DesignFields.ValidateDocUpdates != "" {
 		if _, err := stmt.ExecContext(ctx, data.ID, rev.rev, rev.id, data.DesignFields.Language, "validate", "validate", data.DesignFields.ValidateDocUpdates, data.DesignFields.AutoUpdate, nil, nil, nil); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (d *db) dropMapTables(ctx context.Context, tx *sql.Tx, docID string, curRev revision) error {
+	if curRev.rev == 0 {
+		return nil
+	}
+	rows, err := tx.QueryContext(ctx, d.query(`
+		SELECT id, rev, rev_id, func_name
+		FROM {{ .Design }}
+		WHERE func_type = 'map' AND id = $1
+			AND rev = $2 AND rev_id = $3
+	`), docID, curRev.rev, curRev.id)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	var queries []string
+	for rows.Next() {
+		var (
+			id, view string
+			rev      revision
+		)
+		if err := rows.Scan(&id, &rev.rev, &rev.id, &view); err != nil {
+			return err
+		}
+		queries = append(queries, d.ddocQuery(id, view, rev.String(), `DROP TABLE IF EXISTS {{ .Map }}`))
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	for _, q := range queries {
+		if _, err := tx.ExecContext(ctx, q); err != nil {
 			return err
 		}
 	}

@@ -27,7 +27,6 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
 	"github.com/go-kivik/kivik/v4/x/options"
-	"github.com/go-kivik/kivik/x/sqlite/v4/js"
 	"github.com/go-kivik/kivik/x/sqlite/v4/reduce"
 )
 
@@ -50,7 +49,7 @@ func (d *db) Query(ctx context.Context, ddoc, view string, opts driver.Options) 
 	}
 
 	if isBuiltinView(ddoc) {
-		return d.queryBuiltinView(ctx, vopts, nil, "", "")
+		return d.queryBuiltinView(ctx, vopts, nil, "", "", "")
 	}
 
 	// Normalize the ddoc and view values
@@ -77,7 +76,11 @@ func (d *db) Query(ctx context.Context, ddoc, view string, opts driver.Options) 
 	return results, nil
 }
 
-func leavesCTE(extraWhere string) string {
+func leavesCTE(extraWhere, indexedBy string) string {
+	var indexClause string
+	if indexedBy != "" {
+		indexClause = " INDEXED BY " + indexedBy
+	}
 	return `
 	WITH leaves AS (
 		SELECT
@@ -89,7 +92,7 @@ func leavesCTE(extraWhere string) string {
 			doc.deleted
 		FROM {{ .Revs }} AS rev
 		LEFT JOIN {{ .Revs }} AS child ON child.id = rev.id AND rev.rev = child.parent_rev AND rev.rev_id = child.parent_rev_id
-		JOIN {{ .Docs }} AS doc ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
+		JOIN {{ .Docs }} AS doc` + indexClause + ` ON rev.id = doc.id AND rev.rev = doc.rev AND rev.rev_id = doc.rev_id
 		WHERE child.id IS NULL
 			AND NOT doc.deleted
 			` + extraWhere + `
@@ -119,7 +122,7 @@ func (d *db) performQuery(
 		where := append([]string{""}, vopts.BuildWhere(&args)...)
 		reduceWhere := append([]string{""}, vopts.BuildReduceCacheWhere(&args)...)
 
-		query := fmt.Sprintf(d.ddocQuery(ddoc, view, rev.String(), leavesCTE("")+`,
+		query := fmt.Sprintf(d.ddocQuery(ddoc, view, rev.String(), leavesCTE("", "")+`,
 			 reduce AS (
 				SELECT
 					CASE WHEN MAX(id) IS NOT NULL THEN TRUE ELSE FALSE END AS reducible,
@@ -267,7 +270,7 @@ func (d *db) performQuery(
 				_ = results.Close() //nolint:sqlclosecheck // invalid option specified for reduce, so abort the query
 				return nil, &internal.Error{Status: http.StatusBadRequest, Message: "conflicts is invalid for reduce"}
 			}
-			result, err := d.reduce(results, meta.reduceFuncJS, vopts.ReduceGroupLevel())
+			result, err := d.reduce(ctx, results, meta.reduceFuncJS, vopts.ReduceGroupLevel())
 			if err != nil {
 				return nil, err
 			}
@@ -406,15 +409,15 @@ func (d *db) performGroupQuery(ctx context.Context, ddoc, view string, vopts *op
 		}
 	}
 
-	result, err := d.reduce(results, meta.reduceFuncJS, vopts.ReduceGroupLevel())
+	result, err := d.reduce(ctx, results, meta.reduceFuncJS, vopts.ReduceGroupLevel())
 	if err != nil {
 		return nil, err
 	}
 	return metaReduced{Rows: result, meta: meta}, nil
 }
 
-func (d *db) reduce(results *sql.Rows, reduceFuncJS string, groupLevel int) (driver.Rows, error) {
-	return reduce.Reduce(&reduceRowIter{results: results}, reduceFuncJS, d.logger, groupLevel)
+func (d *db) reduce(ctx context.Context, results *sql.Rows, reduceFuncJS string, groupLevel int) (driver.Rows, error) {
+	return reduce.Reduce(ctx, &reduceRowIter{results: results}, reduceFuncJS, d.logger, d.js, groupLevel)
 }
 
 const batchSize = 100
@@ -538,7 +541,7 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 		emitID  string
 		emitRev revision
 	)
-	mapFunc, err := js.Map(*mapFuncJS, func(key, value any) {
+	mapFunc, err := d.js.Map(*mapFuncJS, func(key, value any) {
 		batch.add(emitID, emitRev, key, value)
 	})
 	if err != nil {
@@ -583,7 +586,7 @@ func (d *db) updateIndex(ctx context.Context, ddoc, view, mode string) (revision
 
 		emitID = full.ID
 		emitRev = rev
-		if err := mapFunc(full.toMap()); err != nil {
+		if err := mapFunc(ctx, full.toMap()); err != nil {
 			d.logger.Printf("map function threw exception for %s: %s", full.ID, err)
 			batch.delete(full.ID, rev)
 		}

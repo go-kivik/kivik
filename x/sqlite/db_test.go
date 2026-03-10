@@ -257,6 +257,7 @@ func TestDBStats(t *testing.T) {
 		want: &driver.DBStats{
 			Name:      "test",
 			UpdateSeq: "0",
+			PurgeSeq:  "0",
 		},
 	})
 	tests.Add("with docs and deletions", test{
@@ -271,6 +272,7 @@ func TestDBStats(t *testing.T) {
 			DocCount:     2,
 			DeletedCount: 1,
 			UpdateSeq:    "4",
+			PurgeSeq:     "0",
 		},
 	})
 
@@ -319,5 +321,32 @@ func TestDBViewCleanup(t *testing.T) {
 	err := d.ViewCleanup(context.Background())
 	if err != nil {
 		t.Fatalf("ViewCleanup failed: %s", err)
+	}
+}
+
+func TestStats_purgeSeq(t *testing.T) {
+	t.Parallel()
+	d := newDB(t)
+	rev := d.tPut("doc1", map[string]string{"key": "val"})
+
+	stats, err := d.Stats(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stats.PurgeSeq != "0" {
+		t.Errorf("before purge: got PurgeSeq %q, want %q", stats.PurgeSeq, "0")
+	}
+
+	_, err = d.Purge(context.Background(), map[string][]string{"doc1": {rev}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	stats, err = d.Stats(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stats.PurgeSeq != "1" {
+		t.Errorf("after purge: got PurgeSeq %q, want %q", stats.PurgeSeq, "1")
 	}
 }

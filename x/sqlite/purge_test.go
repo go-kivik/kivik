@@ -41,7 +41,9 @@ func TestDBPurge(t *testing.T) {
 		arg: map[string][]string{
 			"foo": {"1-1234", "2-5678"},
 		},
-		want: &driver.PurgeResult{},
+		want: &driver.PurgeResult{
+			Seq: 1,
+		},
 	})
 	tests.Add("success", func(t *testing.T) any {
 		d := newDB(t)
@@ -53,6 +55,7 @@ func TestDBPurge(t *testing.T) {
 				"foo": {rev},
 			},
 			want: &driver.PurgeResult{
+				Seq: 1,
 				Purged: map[string][]string{
 					"foo": {rev},
 				},
@@ -77,7 +80,9 @@ func TestDBPurge(t *testing.T) {
 			arg: map[string][]string{
 				"foo": {rev},
 			},
-			want: &driver.PurgeResult{},
+			want: &driver.PurgeResult{
+				Seq: 1,
+			},
 			wantRevs: []leaf{
 				{ID: "foo", Rev: 1},
 				{ID: "foo", Rev: 2, ParentRev: &[]int{1}[0]},
@@ -107,6 +112,7 @@ func TestDBPurge(t *testing.T) {
 				"foo": {"3-ccc"},
 			},
 			want: &driver.PurgeResult{
+				Seq: 1,
 				Purged: map[string][]string{
 					"foo": {"3-ccc"},
 				},
@@ -123,7 +129,6 @@ func TestDBPurge(t *testing.T) {
 	/*
 		TODO:
 		- What happens when purging a leaf, and its parent at the same time?
-		- what is purge seq?
 		- refactor: bulk delete, bulk lookup
 	*/
 
@@ -158,6 +163,74 @@ func TestDBPurge(t *testing.T) {
 		}
 		if d := cmp.Diff(tt.wantRevs, leaves); d != "" {
 			t.Errorf("Unexpected leaves: %s", d)
+		}
+	})
+}
+
+func TestDBPurge_seq(t *testing.T) {
+	t.Parallel()
+
+	type purgeStep struct {
+		arg     map[string][]string
+		wantSeq int64
+	}
+
+	type test struct {
+		db    *testDB
+		steps []purgeStep
+	}
+
+	tests := testy.NewTable()
+
+	tests.Add("sequential purges increment seq", func(t *testing.T) any {
+		d := newDB(t)
+		rev1 := d.tPut("doc1", map[string]string{"key": "val1"})
+		rev2 := d.tPut("doc2", map[string]string{"key": "val2"})
+
+		return test{
+			db: d,
+			steps: []purgeStep{
+				{
+					arg:     map[string][]string{"doc1": {rev1}},
+					wantSeq: 1,
+				},
+				{
+					arg:     map[string][]string{"doc2": {rev2}},
+					wantSeq: 2,
+				},
+			},
+		}
+	})
+
+	tests.Add("empty purge still increments seq", func(t *testing.T) any {
+		d := newDB(t)
+		rev := d.tPut("doc1", map[string]string{"key": "val"})
+
+		return test{
+			db: d,
+			steps: []purgeStep{
+				{
+					arg:     map[string][]string{"nonexistent": {"1-abc"}},
+					wantSeq: 1,
+				},
+				{
+					arg:     map[string][]string{"doc1": {rev}},
+					wantSeq: 2,
+				},
+			},
+		}
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		t.Parallel()
+		for i, step := range tt.steps {
+			got, err := tt.db.Purge(context.Background(), step.arg)
+			if err != nil {
+				t.Fatalf("step %d: unexpected error: %s", i, err)
+			}
+			if got.Seq != step.wantSeq {
+				t.Errorf("step %d: unexpected Seq: got %d, want %d", i, got.Seq, step.wantSeq)
+			}
 		}
 	})
 }

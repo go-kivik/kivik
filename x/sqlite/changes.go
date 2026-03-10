@@ -31,17 +31,17 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
 	"github.com/go-kivik/kivik/v4/x/options"
-	"github.com/go-kivik/kivik/x/sqlite/v4/js"
 )
 
 type normalChanges struct {
+	ctx         context.Context
 	rows        *sql.Rows
 	pending     int64
 	lastSeq     string
 	etag        string
 	includeDocs bool
 	allDocs     bool
-	filter      func(doc any, req any) (bool, error)
+	filter      func(ctx context.Context, doc any, req any) (bool, error)
 }
 
 var _ driver.Changes = &normalChanges{}
@@ -74,6 +74,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts options.Map) (*normalCha
 	}
 
 	c := &normalChanges{
+		ctx:     ctx,
 		allDocs: opts.Style() == options.StyleAllDocs,
 	}
 
@@ -115,7 +116,7 @@ func (d *db) newNormalChanges(ctx context.Context, opts options.Map) (*normalCha
 		return nil, err
 	}
 
-	query := fmt.Sprintf(d.query(leavesCTE("")+`,
+	query := fmt.Sprintf(d.query(leavesCTE("", "")+`,
 		winning AS (
 			SELECT
 				id,
@@ -250,21 +251,21 @@ func (d *db) newNormalChanges(ctx context.Context, opts options.Map) (*normalCha
 		}
 
 		if filterType == "filter" {
-			c.filter, err = js.Filter(*filterFuncJS)
+			c.filter, err = d.js.Filter(*filterFuncJS)
 			if err != nil {
 				return nil, &internal.Error{Status: http.StatusInternalServerError, Err: err}
 			}
 		} else {
 			var emitted bool
-			mapFunc, err := js.Map(*filterFuncJS, func(any, any) {
+			mapFunc, err := d.js.Map(*filterFuncJS, func(any, any) {
 				emitted = true
 			})
 			if err != nil {
 				return nil, &internal.Error{Status: http.StatusInternalServerError, Err: err}
 			}
-			c.filter = func(doc, _ any) (bool, error) {
+			c.filter = func(ctx context.Context, doc, _ any) (bool, error) {
 				emitted = false
-				err := mapFunc(doc)
+				err := mapFunc(ctx, doc)
 				return emitted, err
 			}
 		}
@@ -355,7 +356,7 @@ func (c *normalChanges) Next(change *driver.Change) error {
 			Attachments: atts,
 		}
 		if c.filter != nil {
-			ok, err := c.filter(toMerge.toMap(), nil)
+			ok, err := c.filter(c.ctx, toMerge.toMap(), nil)
 			if err != nil {
 				return &internal.Error{Status: http.StatusInternalServerError, Err: err}
 			}

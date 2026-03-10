@@ -13,9 +13,13 @@
 package reduce
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"hash/fnv"
 	"log"
+	"math"
+	"math/bits"
 	"net/http"
 	"slices"
 	"strings"
@@ -29,7 +33,7 @@ import (
 // Count is the built-in reduce function, [_count].
 //
 // [_count]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#count
-func Count(_ [][2]any, values []any, rereduce bool) ([]any, error) {
+func Count(_ context.Context, _ [][2]any, values []any, rereduce bool) ([]any, error) {
 	if !rereduce {
 		return []any{float64(len(values))}, nil
 	}
@@ -45,14 +49,87 @@ func Count(_ [][2]any, values []any, rereduce bool) ([]any, error) {
 // Sum is the built-in reduce function, [_sum].
 //
 // [_sum]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#sum
-func Sum(_ [][2]any, values []any, _ bool) ([]any, error) {
-	var total float64
+func Sum(_ context.Context, _ [][2]any, values []any, _ bool) ([]any, error) {
+	var totals []float64
 	for _, value := range values {
-		if value != nil {
-			total += value.(float64)
+		switch v := value.(type) {
+		case float64:
+			if totals == nil {
+				totals = []float64{v}
+			} else {
+				totals[0] += v
+			}
+		case []any:
+			for i, elem := range v {
+				f, ok := elem.(float64)
+				if !ok {
+					continue
+				}
+				for len(totals) <= i {
+					totals = append(totals, 0)
+				}
+				totals[i] += f
+			}
+		case map[string]any:
+			if totals != nil {
+				return nil, &internal.Error{
+					Status:  http.StatusInternalServerError,
+					Message: "the _sum function requires that objects not be mixed with other data structures",
+				}
+			}
+			result, err := sumObjects(values)
+			if err != nil {
+				return nil, err
+			}
+			return []any{result}, nil
+		default:
+			valBytes, _ := json.Marshal(v)
+			return nil, &internal.Error{
+				Status:  http.StatusInternalServerError,
+				Message: fmt.Sprintf("the _sum function requires that map values be numbers, arrays of numbers, or objects, not '%s'", string(valBytes)),
+			}
 		}
 	}
-	return []any{total}, nil
+	if totals == nil {
+		totals = []float64{0}
+	}
+	result := make([]any, len(totals))
+	for i, v := range totals {
+		result[i] = v
+	}
+	return result, nil
+}
+
+func sumObjects(values []any) (map[string]any, error) {
+	result := map[string]any{}
+	for _, value := range values {
+		obj, ok := value.(map[string]any)
+		if !ok {
+			return nil, &internal.Error{
+				Status:  http.StatusInternalServerError,
+				Message: "the _sum function requires that objects not be mixed with other data structures",
+			}
+		}
+		for k, v := range obj {
+			switch val := v.(type) {
+			case float64:
+				existing, _ := result[k].(float64)
+				result[k] = existing + val
+			case map[string]any:
+				existing, ok := result[k].(map[string]any)
+				if !ok {
+					result[k] = val
+				} else {
+					merged, err := sumObjects([]any{existing, val})
+					if err != nil {
+						return nil, err
+					}
+					result[k] = merged
+				}
+			}
+		}
+	}
+	return result, nil
 }
 
 type stats struct {
@@ -66,28 +143,37 @@ type stats struct {
 // toFloatValues converts values to a slice of float64 slices, if possible.
 // This is used when a map function returns an array of numbers to be aggregated
 // by the _stats function
-func toFloatValues(values []any, rereduce bool) ([][]float64, bool) {
+func toFloatValues(values []any, rereduce bool) ([][]float64, bool, error) {
 	if rereduce {
-		return nil, false
+		return nil, false, nil
 	}
 	_, isSlice := values[0].([]any)
 	if !isSlice {
-		return nil, false
+		return nil, false, nil
 	}
+	expectedLen := -1
 	floatValues := make([][]float64, 0, len(values))
 	for _, v := range values {
 		fv := v.([]any)
+		if expectedLen == -1 {
+			expectedLen = len(fv)
+		} else if len(fv) != expectedLen {
+			return nil, false, &internal.Error{
+				Status:  http.StatusInternalServerError,
+				Message: "the _stats function requires that map values be arrays of the same length",
+			}
+		}
 		float := make([]float64, 0, len(fv))
 		for _, f := range fv {
 			floatValue, ok := f.(float64)
 			if !ok {
-				return nil, false
+				return nil, false, nil
 			}
 			float = append(float, floatValue)
 		}
 		floatValues = append(floatValues, float)
 	}
-	return floatValues, true
+	return floatValues, true, nil
 }
 
 func toStatsValues(values []any, rereduce bool) ([][]stats, bool) {
@@ -125,8 +211,16 @@ func flattenStats(values []any) []stats {
 // Stats is the built-in reduce function, [_stats].
 //
 // [_stats]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#stats
-func Stats(_ [][2]any, values []any, rereduce bool) ([]any, error) {
-	if floatValues, ok := toFloatValues(values, rereduce); ok {
+func Stats(_ context.Context, _ [][2]any, values []any, rereduce bool) ([]any, error) {
+	if len(values) == 0 {
+		return nil, &internal.Error{
+			Status:  http.StatusInternalServerError,
+			Message: "the _stats function requires at least one value",
+		}
+	}
+	if floatValues, ok, err := toFloatValues(values, rereduce); err != nil {
+		return nil, err
+	} else if ok {
 		return reduceStatsFloatArray(floatValues), nil
 	}
 	statsValues, ok := toStatsValues(values, rereduce)
@@ -240,12 +334,91 @@ func rereduceStatsFloatArray(values [][]stats) []any {
 	return []any{result}
 }
 
+const hllPrecision = 14
+
+// hll is a HyperLogLog sketch for approximate distinct counting.
+type hll struct {
+	Registers [1 << hllPrecision]uint8
+}
+
+// MarshalJSON returns the HLL's cardinality estimate as a JSON number.
+func (h *hll) MarshalJSON() ([]byte, error) {
+	return json.Marshal(h.Estimate())
+}
+
+// Estimate returns the approximate cardinality.
+func (h *hll) Estimate() float64 {
+	m := float64(len(h.Registers))
+	var harmonicSum float64
+	zeros := 0
+	for _, val := range h.Registers {
+		harmonicSum += 1.0 / float64(uint64(1)<<val)
+		if val == 0 {
+			zeros++
+		}
+	}
+	alpha := 0.7213 / (1 + 1.079/m)
+	estimate := alpha * m * m / harmonicSum
+	if estimate <= 2.5*m && zeros > 0 {
+		estimate = m * math.Log(m/float64(zeros))
+	}
+	return math.Round(estimate)
+}
+
+func (h *hll) add(data []byte) {
+	hash := hash64(data)
+	idx := hash >> (64 - hllPrecision)
+	w := hash<<hllPrecision | (1 << (hllPrecision - 1))
+	rho := uint8(bits.LeadingZeros64(w)) + 1
+	if rho > h.Registers[idx] {
+		h.Registers[idx] = rho
+	}
+}
+
+func (h *hll) merge(other *hll) {
+	for i, val := range other.Registers {
+		if val > h.Registers[i] {
+			h.Registers[i] = val
+		}
+	}
+}
+
+func hash64(data []byte) uint64 {
+	h := fnv.New64a()
+	h.Write(data)
+	return h.Sum64()
+}
+
+// ApproxCountDistinct is the built-in reduce function,
+// [_approx_count_distinct]. It uses HyperLogLog to estimate the number of
+// distinct keys.
+//
+// [_approx_count_distinct]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#approx_count_distinct
+func ApproxCountDistinct(_ context.Context, keys [][2]any, values []any, rereduce bool) ([]any, error) {
+	h := &hll{}
+	if rereduce {
+		for _, v := range values {
+			other, ok := v.(*hll)
+			if !ok {
+				continue
+			}
+			h.merge(other)
+		}
+		return []any{h}, nil
+	}
+	for _, key := range keys {
+		keyBytes, _ := json.Marshal(key[0])
+		h.add(keyBytes)
+	}
+	return []any{h}, nil
+}
+
 // ParseFunc parses the passed javascript string, and returns a Go function that
-// will execute it.  If the input is empty, nil is returned. If the input is a
-// string that corresponds to one of the built-in function names (i.e. '_sum',
-// '_count', etc), the native Go implementation is returned instead. The logger
-// is used to log any unhandled exceptions thrown by the JavaScript function.
-func ParseFunc(javascript string, logger *log.Logger) (Func, error) {
+// implements the reduce function. Built-in functions (_count, _sum, _stats,
+// _approx_count_distinct) are returned directly. User-defined functions are
+// compiled using the provided Runtime. The logger is used to log any unhandled
+// exceptions thrown by user-defined JavaScript functions.
+func ParseFunc(javascript string, logger *log.Logger, rt *js.Runtime) (Func, error) {
 	switch javascript {
 	case "":
 		return nil, nil
@@ -255,13 +428,15 @@ func ParseFunc(javascript string, logger *log.Logger) (Func, error) {
 		return Sum, nil
 	case "_stats":
 		return Stats, nil
+	case "_approx_count_distinct":
+		return ApproxCountDistinct, nil
 	default:
-		reduceFunc, err := js.Reduce(javascript)
+		reduceFunc, err := rt.Reduce(javascript)
 		if err != nil {
 			return nil, err
 		}
-		return func(keys [][2]any, values []any, rereduce bool) ([]any, error) {
-			ret, err := reduceFunc(keys, values, rereduce)
+		return func(ctx context.Context, keys [][2]any, values []any, rereduce bool) ([]any, error) {
+			ret, err := reduceFunc(ctx, keys, values, rereduce)
 			// According to CouchDB reference implementation, when a user-defined
 			// reduce function throws an exception, the error is logged and the
 			// return value is set to null.

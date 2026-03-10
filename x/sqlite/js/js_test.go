@@ -13,17 +13,248 @@
 package js
 
 import (
+	"context"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"gitlab.com/flimzy/testy"
 )
+
+func TestMap(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		code           string
+		emit           func(key, value any)
+		ctx            context.Context //nolint:containedctx // test struct needs ctx to pass to function under test
+		doc            any
+		wantCompileErr string
+		wantErr        string
+	}
+
+	tests := testy.NewTable()
+	tests.Add("cancelled context interrupts infinite loop", func() test {
+		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+		t.Cleanup(cancel)
+		return test{
+			code:    `function(doc) { while(true) {} }`,
+			emit:    func(key, value any) {},
+			ctx:     ctx,
+			doc:     map[string]any{"_id": "foo"},
+			wantErr: "context deadline exceeded",
+		}
+	}())
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		fn, err := Map(tt.code, tt.emit)
+		if !testy.ErrorMatchesRE(tt.wantCompileErr, err) {
+			t.Fatalf("Map() error = %v, wantCompileErr /%s/", err, tt.wantCompileErr)
+		}
+		if err != nil {
+			return
+		}
+
+		err = fn(tt.ctx, tt.doc)
+		if !testy.ErrorMatchesRE(tt.wantErr, err) {
+			t.Fatalf("fn() error = %v, wantErr /%s/", err, tt.wantErr)
+		}
+	})
+}
+
+func TestReduce(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		code           string
+		ctx            context.Context //nolint:containedctx // test struct needs ctx to pass to function under test
+		keys           [][2]any
+		values         []any
+		rereduce       bool
+		wantCompileErr string
+		wantErr        string
+	}
+
+	tests := testy.NewTable()
+	tests.Add("cancelled context interrupts infinite loop", func() test {
+		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+		t.Cleanup(cancel)
+		return test{
+			code:    `function(keys, values, rereduce) { while(true) {} }`,
+			ctx:     ctx,
+			values:  []any{1.0},
+			wantErr: "context deadline exceeded",
+		}
+	}())
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		fn, err := Reduce(tt.code)
+		if !testy.ErrorMatchesRE(tt.wantCompileErr, err) {
+			t.Fatalf("Reduce() error = %v, wantCompileErr /%s/", err, tt.wantCompileErr)
+		}
+		if err != nil {
+			return
+		}
+
+		_, err = fn(tt.ctx, tt.keys, tt.values, tt.rereduce)
+		if !testy.ErrorMatchesRE(tt.wantErr, err) {
+			t.Fatalf("fn() error = %v, wantErr /%s/", err, tt.wantErr)
+		}
+	})
+}
+
+func TestRuntimeReduce(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		code    string
+		keys    [][2]any
+		values  []any
+		wantErr string
+	}
+
+	tests := testy.NewTable()
+	tests.Add("runtime timeout interrupts infinite loop without caller deadline", test{
+		code:    `function(keys, values, rereduce) { while(true) {} }`,
+		values:  []any{1.0},
+		wantErr: "context deadline exceeded",
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		r := New(50 * time.Millisecond)
+
+		fn, err := r.Reduce(tt.code)
+		if err != nil {
+			t.Fatalf("r.Reduce() error = %v", err)
+		}
+
+		_, err = fn(context.Background(), tt.keys, tt.values, false)
+		if !testy.ErrorMatchesRE(tt.wantErr, err) {
+			t.Fatalf("fn() error = %v, wantErr /%s/", err, tt.wantErr)
+		}
+	})
+}
+
+func TestFilter(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		code           string
+		ctx            context.Context //nolint:containedctx // test struct needs ctx to pass to function under test
+		doc            any
+		req            any
+		want           bool
+		wantCompileErr string
+		wantErr        string
+	}
+
+	tests := testy.NewTable()
+	tests.Add("cancelled context interrupts infinite loop", func() test {
+		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+		t.Cleanup(cancel)
+		return test{
+			code:    `function(doc, req) { while(true) {} }`,
+			ctx:     ctx,
+			doc:     map[string]any{"_id": "foo"},
+			req:     map[string]any{},
+			wantErr: "context deadline exceeded",
+		}
+	}())
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		fn, err := Filter(tt.code)
+		if !testy.ErrorMatchesRE(tt.wantCompileErr, err) {
+			t.Fatalf("Filter() error = %v, wantCompileErr /%s/", err, tt.wantCompileErr)
+		}
+		if err != nil {
+			return
+		}
+
+		got, err := fn(tt.ctx, tt.doc, tt.req)
+		if !testy.ErrorMatchesRE(tt.wantErr, err) {
+			t.Fatalf("fn() error = %v, wantErr /%s/", err, tt.wantErr)
+		}
+		if err != nil {
+			return
+		}
+		if got != tt.want {
+			t.Errorf("got %v, want %v", got, tt.want)
+		}
+	})
+}
+
+func TestRuntimeFilter(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		code    string
+		doc     any
+		req     any
+		wantErr string
+	}
+
+	tests := testy.NewTable()
+	tests.Add("runtime timeout interrupts infinite loop without caller deadline", test{
+		code:    `function(doc, req) { while(true) {} }`,
+		doc:     map[string]any{"_id": "foo"},
+		req:     map[string]any{},
+		wantErr: "context deadline exceeded",
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		r := New(50 * time.Millisecond)
+
+		fn, err := r.Filter(tt.code)
+		if err != nil {
+			t.Fatalf("r.Filter() error = %v", err)
+		}
+
+		_, err = fn(context.Background(), tt.doc, tt.req)
+		if !testy.ErrorMatchesRE(tt.wantErr, err) {
+			t.Fatalf("fn() error = %v, wantErr /%s/", err, tt.wantErr)
+		}
+	})
+}
+
+func TestRuntimeUpdate(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		code    string
+		doc     any
+		req     any
+		wantErr string
+	}
+
+	tests := testy.NewTable()
+	tests.Add("runtime timeout interrupts infinite loop without caller deadline", test{
+		code:    `function(doc, req) { while(true) {} }`,
+		doc:     map[string]any{"_id": "foo"},
+		req:     map[string]any{},
+		wantErr: "context deadline exceeded",
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		r := New(50 * time.Millisecond)
+
+		fn, err := r.Update(tt.code)
+		if err != nil {
+			t.Fatalf("r.Update() error = %v", err)
+		}
+
+		_, _, err = fn(context.Background(), tt.doc, tt.req)
+		if !testy.ErrorMatchesRE(tt.wantErr, err) {
+			t.Fatalf("fn() error = %v, wantErr /%s/", err, tt.wantErr)
+		}
+	})
+}
 
 func TestUpdate(t *testing.T) {
 	t.Parallel()
 
 	type test struct {
 		code           string
+		ctx            context.Context //nolint:containedctx // test struct needs ctx to pass to function under test
 		doc            any
 		req            any
 		wantNewDoc     any
@@ -78,6 +309,17 @@ func TestUpdate(t *testing.T) {
 		wantNewDoc: map[string]any{"_id": "foo"},
 		wantResp:   "",
 	})
+	tests.Add("cancelled context interrupts infinite loop", func() test {
+		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+		t.Cleanup(cancel)
+		return test{
+			code:    `function(doc, req) { while(true) {} }`,
+			ctx:     ctx,
+			doc:     map[string]any{"_id": "foo"},
+			req:     map[string]any{},
+			wantErr: "context deadline exceeded",
+		}
+	}())
 	tests.Add("null doc input", test{
 		code:       `function(doc, req) { return [{"created": true}, "created"]; }`,
 		doc:        nil,
@@ -95,7 +337,11 @@ func TestUpdate(t *testing.T) {
 			return
 		}
 
-		gotNewDoc, gotResp, err := fn(tt.doc, tt.req)
+		if tt.ctx == nil {
+			tt.ctx = context.Background()
+		}
+
+		gotNewDoc, gotResp, err := fn(tt.ctx, tt.doc, tt.req)
 		if !testy.ErrorMatchesRE(tt.wantErr, err) {
 			t.Fatalf("fn() error = %v, wantErr /%s/", err, tt.wantErr)
 		}
@@ -107,6 +353,121 @@ func TestUpdate(t *testing.T) {
 		}
 		if d := cmp.Diff(tt.wantNewDoc, gotNewDoc); d != "" {
 			t.Errorf("newDoc mismatch (-want +got):\n%s", d)
+		}
+	})
+}
+
+func TestRuntimeMap(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		code    string
+		emit    func(key, value any)
+		doc     any
+		wantErr string
+	}
+
+	tests := testy.NewTable()
+	tests.Add("runtime timeout interrupts infinite loop without caller deadline", test{
+		code:    `function(doc) { while(true) {} }`,
+		emit:    func(key, value any) {},
+		doc:     map[string]any{"_id": "foo"},
+		wantErr: "context deadline exceeded",
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		r := New(50 * time.Millisecond)
+
+		fn, err := r.Map(tt.code, tt.emit)
+		if err != nil {
+			t.Fatalf("r.Map() error = %v", err)
+		}
+
+		err = fn(context.Background(), tt.doc)
+		if !testy.ErrorMatchesRE(tt.wantErr, err) {
+			t.Fatalf("fn() error = %v, wantErr /%s/", err, tt.wantErr)
+		}
+	})
+}
+
+func TestValidate(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		code           string
+		ctx            context.Context //nolint:containedctx // test struct needs ctx to pass to function under test
+		newDoc         any
+		oldDoc         any
+		userCtx        any
+		secObj         any
+		wantCompileErr string
+		wantErr        string
+	}
+
+	tests := testy.NewTable()
+	tests.Add("cancelled context interrupts infinite loop", func() test {
+		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+		t.Cleanup(cancel)
+		return test{
+			code:    `function(newDoc, oldDoc, userCtx, secObj) { while(true) {} }`,
+			ctx:     ctx,
+			newDoc:  map[string]any{"_id": "foo"},
+			oldDoc:  map[string]any{"_id": "foo"},
+			userCtx: map[string]any{},
+			secObj:  map[string]any{},
+			wantErr: "context deadline exceeded",
+		}
+	}())
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		fn, err := Validate(tt.code)
+		if !testy.ErrorMatchesRE(tt.wantCompileErr, err) {
+			t.Fatalf("Validate() error = %v, wantCompileErr /%s/", err, tt.wantCompileErr)
+		}
+		if err != nil {
+			return
+		}
+
+		err = fn(tt.ctx, tt.newDoc, tt.oldDoc, tt.userCtx, tt.secObj)
+		if !testy.ErrorMatchesRE(tt.wantErr, err) {
+			t.Fatalf("fn() error = %v, wantErr /%s/", err, tt.wantErr)
+		}
+	})
+}
+
+func TestRuntimeValidate(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		code    string
+		newDoc  any
+		oldDoc  any
+		userCtx any
+		secObj  any
+		wantErr string
+	}
+
+	tests := testy.NewTable()
+	tests.Add("runtime timeout interrupts infinite loop without caller deadline", test{
+		code:    `function(newDoc, oldDoc, userCtx, secObj) { while(true) {} }`,
+		newDoc:  map[string]any{"_id": "foo"},
+		oldDoc:  map[string]any{"_id": "foo"},
+		userCtx: map[string]any{},
+		secObj:  map[string]any{},
+		wantErr: "context deadline exceeded",
+	})
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		r := New(50 * time.Millisecond)
+
+		fn, err := r.Validate(tt.code)
+		if err != nil {
+			t.Fatalf("r.Validate() error = %v", err)
+		}
+
+		err = fn(context.Background(), tt.newDoc, tt.oldDoc, tt.userCtx, tt.secObj)
+		if !testy.ErrorMatchesRE(tt.wantErr, err) {
+			t.Fatalf("fn() error = %v, wantErr /%s/", err, tt.wantErr)
 		}
 	})
 }

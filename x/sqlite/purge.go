@@ -66,5 +66,15 @@ func (d *db) Purge(ctx context.Context, request map[string][]string) (*driver.Pu
 		}
 	}
 
+	err = tx.QueryRowContext(ctx, d.query(`
+		INSERT INTO {{ .Metadata }} (key, value)
+		VALUES ('purge_seq', '1')
+		ON CONFLICT(key) DO UPDATE SET value = CAST(CAST(value AS INTEGER) + 1 AS TEXT)
+		RETURNING CAST(value AS INTEGER)
+	`)).Scan(&result.Seq)
+	if err != nil {
+		return nil, err
+	}
+
 	return result, tx.Commit()
 }

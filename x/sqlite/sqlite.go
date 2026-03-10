@@ -19,6 +19,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"time"
 
 	"modernc.org/sqlite"
 
@@ -26,6 +27,7 @@ import (
 	"github.com/go-kivik/kivik/v4/driver"
 	internal "github.com/go-kivik/kivik/v4/int/errors"
 	"github.com/go-kivik/kivik/v4/x/collate"
+	"github.com/go-kivik/kivik/x/sqlite/v4/js"
 )
 
 func init() {
@@ -39,6 +41,13 @@ func init() {
 func couchdbCmpString(a, b string) int {
 	return collate.CompareJSON(json.RawMessage(a), json.RawMessage(b))
 }
+
+// defaultJSTimeout is the maximum time a single JavaScript function execution
+// may run before being interrupted. This matches CouchDB's default
+// [os_process_timeout].
+//
+// [os_process_timeout]: https://docs.couchdb.org/en/stable/config/externals.html#externals/os_process_timeout
+const defaultJSTimeout = 5 * time.Second
 
 type drv struct{}
 
@@ -58,6 +67,7 @@ func (drv) NewClient(dsn string, options driver.Options) (driver.Client, error) 
 		dsn:    dsn,
 		db:     db,
 		logger: log.Default(),
+		js:     js.New(defaultJSTimeout),
 	}
 	options.Apply(c)
 
@@ -68,6 +78,7 @@ type client struct {
 	dsn    string
 	db     *sql.DB
 	logger *log.Logger
+	js     *js.Runtime
 }
 
 var (

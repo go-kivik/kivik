@@ -62,7 +62,7 @@ func (d *db) runValidation(ctx context.Context, tx *sql.Tx, data *docData, curRe
 		"members": map[string]any{"names": []string{}, "roles": []string{}},
 	}
 	for _, fn := range funcs {
-		if err := fn(newDoc, oldDoc, userCtx, secObj); err != nil {
+		if err := fn(ctx, newDoc, oldDoc, userCtx, secObj); err != nil {
 			return err
 		}
 	}
@@ -105,7 +105,7 @@ func (d *db) getValidateFuncs(ctx context.Context, tx *sql.Tx) ([]js.ValidateFun
 		if err := rows.Scan(&funcBody); err != nil {
 			return nil, err
 		}
-		fn, err := js.Validate(funcBody)
+		fn, err := d.js.Validate(funcBody)
 		if err != nil {
 			return nil, err
 		}

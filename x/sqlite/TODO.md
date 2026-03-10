@@ -1,5 +1,30 @@
 # SQLite Driver TODO
 
+## Functionality
+
+- [ ] **Map/reduce timeout** — No timeout handling for long-running JS
+  functions.
+- [ ] **`revs=true` + attachments in OpenRevs** — Not implemented/tested.
+- [ ] **Historical revision attachments** — Get attachment from old revision,
+  correct attachment in conflict scenarios.
+- [ ] **AllDocs on nonexistent DB** — Verify correct error behavior.
+- [ ] **Filter functions** — Need more comprehensive testing/fleshing out.
+
+## Test Gaps
+
+- [ ] **Changes feed `conflicts` option** — Not tested.
+- [ ] **Changes feed mode coverage** — Longpoll missing tests for descending,
+  filter, doc_ids, style. Continuous has minimal test coverage.
+- [ ] **DeleteAttachment on missing DB** — Should return "db not found".
+- [ ] **CreateDoc edge cases** — nil doc, UUID configuration options,
+  duplicate UUID retry.
+- [ ] **Put with update function interaction** — Not tested.
+- [ ] **GetAttachment edge cases** — Attachment from historical revision,
+  correct attachment in conflict, various 404 scenarios.
+- [ ] **Purge edge cases** — Purging leaf + parent simultaneously.
+- [ ] **Design doc edge cases** — Unsupported language handling, func_type
+  update/validate storage.
+
 ## Low Priority (polyfilled by kivik)
 
 - [ ] **BulkDocs** (`db.go`) — kivik emulates via individual Put/CreateDoc.
@@ -7,22 +32,13 @@
 
 ## Performance / Code Quality
 
-- [ ] **Find cross-type comparison correctness** (`find.go`) —
-  `selectorToSQL` translates comparison operators (`$lt`, `$lte`, `$gt`,
-  `$gte`, `$eq`) to SQL, but SQLite doesn't support CouchDB's cross-type
-  ordering (null < bool < number < string < array < object). When
-  `selectorComplete=true`, the in-memory filter is skipped, producing
-  incorrect results for cross-type queries.
-- [ ] **`use_index` doesn't influence query execution** (`find.go`) — The hint
-  is validated and triggers a warning if missing, but doesn't guide the
-  query plan.
 - [ ] **Reduce caching** (`README.md`) — Reduce functions run on-demand with no
   intermediate result caching.
-- [ ] **Mango SQL optimization** (`find.go`) — These selectors could be
-  translated to SQL for index support but aren't yet: `$size`, `$type`.
-  The remaining operators (`$nin`, `$mod`, `$all`, `$elemMatch`,
-  `$allMatch`, `$keyMapMatch`) aren't indexable in SQLite and are handled
-  adequately by the in-memory fallback.
 - [ ] **Filter in Go instead of SQL** (`query.go:569`) — Local and design
   document filtering during view updates is done in Go after fetching rows,
   rather than in the SQL query.
+- [ ] **Cross-type SQL optimization** (`find.go`) — Inequality SQL type guards
+  could encode CouchDB's type ordering directly (e.g. `$gt: 21` →
+  `(type IN ('integer','real') AND val > 21) OR type IN ('text','array','object')`)
+  to allow `selectorComplete=true` and skip the in-memory fallback. Currently
+  correctness is ensured by always falling back to in-memory filtering.

@@ -14,23 +14,43 @@
 package js
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"reflect"
+	"time"
 
 	"github.com/dop251/goja"
 )
 
+// Runtime holds configuration for JavaScript execution.
+type Runtime struct {
+	timeout time.Duration
+}
+
+// New creates a new Runtime with the given timeout. If timeout is zero, no
+// timeout is enforced and cancellation depends entirely on the caller's context.
+func New(timeout time.Duration) *Runtime {
+	return &Runtime{timeout: timeout}
+}
+
 // MapFunc is the Go representation of a CouchDB [map function]. Exceptions are
-// converted to errors.
+// converted to errors. The context controls cancellation; if the context is
+// cancelled, the VM is interrupted and the context error is returned.
 //
 // [map function]: https://docs.couchdb.org/en/stable/ddocs/views/nosql.html#map-functions
-type MapFunc func(doc any) error
+type MapFunc func(ctx context.Context, doc any) error
+
+// Map compiles the provided JavaScript code into a MapFunc, and makes emit
+// available to the JavaScript code. It uses a zero-value Runtime (no timeout).
+func Map(code string, emit func(key, value any)) (MapFunc, error) {
+	return new(Runtime).Map(code, emit)
+}
 
 // Map compiles the provided JavaScript code into a MapFunc, and makes emit
 // available to the JavaScript code.
-func Map(code string, emit func(key, value any)) (MapFunc, error) {
+func (r *Runtime) Map(code string, emit func(key, value any)) (MapFunc, error) {
 	vm := goja.New()
 
 	if err := vm.Set("emit", emit); err != nil {
@@ -46,20 +66,34 @@ func Map(code string, emit func(key, value any)) (MapFunc, error) {
 		panic(fmt.Sprintf("expected map to be a function, got %T", vm.Get("map")))
 	}
 
-	return func(doc any) error {
+	return func(ctx context.Context, doc any) error {
+		if r.timeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(ctx, r.timeout)
+			defer cancel()
+		}
+		done := watchContext(ctx, vm)
+		defer done()
 		_, err := mapFunc(goja.Undefined(), vm.ToValue(doc))
 		return exception(err)
 	}, nil
 }
 
 // FilterFunc represents a CouchDB [filter function]. Exceptions are converted
-// to errors.
+// to errors. The context controls cancellation; if the context is cancelled,
+// the VM is interrupted and the context error is returned.
 //
 // [filter function]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#filter-functions
-type FilterFunc func(doc, req any) (bool, error)
+type FilterFunc func(ctx context.Context, doc, req any) (bool, error)
 
 // Filter compiles the provided JavaScript code into a FilterFunc.
+// It uses a zero-value Runtime (no timeout).
 func Filter(code string) (FilterFunc, error) {
+	return new(Runtime).Filter(code)
+}
+
+// Filter compiles the provided JavaScript code into a FilterFunc.
+func (r *Runtime) Filter(code string) (FilterFunc, error) {
 	vm := goja.New()
 	if _, err := vm.RunString("const filter = " + code); err != nil {
 		return nil, fmt.Errorf("failed to compile filter function: %s", err)
@@ -68,7 +102,14 @@ func Filter(code string) (FilterFunc, error) {
 	if !ok {
 		panic(fmt.Sprintf("expected filter to be a function, got %T", vm.Get("filter")))
 	}
-	return func(doc, req any) (bool, error) {
+	return func(ctx context.Context, doc, req any) (bool, error) {
+		if r.timeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(ctx, r.timeout)
+			defer cancel()
+		}
+		done := watchContext(ctx, vm)
+		defer done()
 		result, err := filterFunc(goja.Undefined(), vm.ToValue(doc), vm.ToValue(req))
 		if err != nil {
 			return false, exception(err)
@@ -82,13 +123,19 @@ func Filter(code string) (FilterFunc, error) {
 // ReduceFunc is the Go representation of a CouchDB [reduce function]. Exceptions
 // are converted to errors. The JavaScript function may return either a single
 // item, or an array.  If a single item is returned, it is wrapped in an array
-// before being returned to the caller.
+// before being returned to the caller. The context controls cancellation.
 //
 // [reduce function]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#reduce-and-rereduce-functions
-type ReduceFunc func(keys [][2]any, values []any, rereduce bool) ([]any, error)
+type ReduceFunc func(ctx context.Context, keys [][2]any, values []any, rereduce bool) ([]any, error)
 
 // Reduce compiles the provided JavaScript code into a ReduceFunc.
+// It uses a zero-value Runtime (no timeout).
 func Reduce(code string) (ReduceFunc, error) {
+	return new(Runtime).Reduce(code)
+}
+
+// Reduce compiles the provided JavaScript code into a ReduceFunc.
+func (r *Runtime) Reduce(code string) (ReduceFunc, error) {
 	vm := goja.New()
 
 	if _, err := vm.RunString("const reduce = " + code); err != nil {
@@ -99,7 +146,14 @@ func Reduce(code string) (ReduceFunc, error) {
 		return nil, fmt.Errorf("expected reduce to be a function, got %T", vm.Get("reduce"))
 	}
 
-	return func(keys [][2]any, values []any, rereduce bool) ([]any, error) {
+	return func(ctx context.Context, keys [][2]any, values []any, rereduce bool) ([]any, error) {
+		if r.timeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(ctx, r.timeout)
+			defer cancel()
+		}
+		done := watchContext(ctx, vm)
+		defer done()
 		reduceValue, err := reduceFunc(goja.Undefined(), vm.ToValue(keys), vm.ToValue(values), vm.ToValue(rereduce))
 		if err != nil {
 			return nil, exception(err)
@@ -126,10 +180,16 @@ func Reduce(code string) (ReduceFunc, error) {
 // has an "unauthorized" key, the error will have HTTP status 401.
 //
 // [validate_doc_update function]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#validate-document-update-functions
-type ValidateFunc func(newDoc, oldDoc, userCtx, secObj any) error
+type ValidateFunc func(ctx context.Context, newDoc, oldDoc, userCtx, secObj any) error
 
 // Validate compiles the provided JavaScript code into a ValidateFunc.
+// It uses a zero-value Runtime (no timeout).
 func Validate(code string) (ValidateFunc, error) {
+	return new(Runtime).Validate(code)
+}
+
+// Validate compiles the provided JavaScript code into a ValidateFunc.
+func (r *Runtime) Validate(code string) (ValidateFunc, error) {
 	vm := goja.New()
 	if _, err := vm.RunString("const validate = " + code); err != nil {
 		return nil, fmt.Errorf("failed to compile validate function: %s", err)
@@ -138,7 +198,14 @@ func Validate(code string) (ValidateFunc, error) {
 	if !ok {
 		panic(fmt.Sprintf("expected validate to be a function, got %T", vm.Get("validate")))
 	}
-	return func(newDoc, oldDoc, userCtx, secObj any) error {
+	return func(ctx context.Context, newDoc, oldDoc, userCtx, secObj any) error {
+		if r.timeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(ctx, r.timeout)
+			defer cancel()
+		}
+		done := watchContext(ctx, vm)
+		defer done()
 		_, err := validateFunc(goja.Undefined(), vm.ToValue(newDoc), vm.ToValue(oldDoc), vm.ToValue(userCtx), vm.ToValue(secObj))
 		if err != nil {
 			return validateException(err)
@@ -184,12 +251,20 @@ func validateException(err error) error {
 
 // UpdateFunc represents a CouchDB [update function]. It accepts a document and
 // a request object and returns the updated document and a response string.
+// The context controls cancellation; if the context is cancelled, the VM is
+// interrupted and the context error is returned.
 //
 // [update function]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#update-functions
-type UpdateFunc func(doc, req any) (any, string, error)
+type UpdateFunc func(ctx context.Context, doc, req any) (any, string, error)
 
 // Update compiles the provided JavaScript code into an UpdateFunc.
+// It uses a zero-value Runtime (no timeout).
 func Update(code string) (UpdateFunc, error) {
+	return new(Runtime).Update(code)
+}
+
+// Update compiles the provided JavaScript code into an UpdateFunc.
+func (r *Runtime) Update(code string) (UpdateFunc, error) {
 	vm := goja.New()
 	if _, err := vm.RunString("const update = " + code); err != nil {
 		return nil, fmt.Errorf("failed to compile update function: %s", err)
@@ -198,7 +273,14 @@ func Update(code string) (UpdateFunc, error) {
 	if !ok {
 		panic(fmt.Sprintf("expected update to be a function, got %T", vm.Get("update")))
 	}
-	return func(doc, req any) (any, string, error) {
+	return func(ctx context.Context, doc, req any) (any, string, error) {
+		if r.timeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(ctx, r.timeout)
+			defer cancel()
+		}
+		done := watchContext(ctx, vm)
+		defer done()
 		result, err := updateFunc(goja.Undefined(), vm.ToValue(doc), vm.ToValue(req))
 		if err != nil {
 			return nil, "", exception(err)
@@ -213,15 +295,38 @@ func Update(code string) (UpdateFunc, error) {
 	}, nil
 }
 
-// exception converts a JavaScript exception to a Go error.
+// watchContext arranges for the VM to be interrupted when the context is
+// done. The returned function must be called (via defer) to clean up. It
+// ensures any in-flight interrupt callback has completed, then calls
+// ClearInterrupt so the VM is reusable for subsequent calls.
+func watchContext(ctx context.Context, vm *goja.Runtime) func() {
+	stop := context.AfterFunc(ctx, func() {
+		vm.Interrupt(ctx.Err())
+	})
+	return func() {
+		stop()
+		vm.ClearInterrupt()
+	}
+}
+
+// exception converts a JavaScript exception to a Go error. If the error is
+// a [goja.InterruptedError], the underlying cause (e.g. context error) is
+// unwrapped and returned directly.
 func exception(err error) error {
 	if err == nil {
 		return nil
+	}
+	var interrupted *goja.InterruptedError
+	if errors.As(err, &interrupted) {
+		if cause, ok := interrupted.Value().(error); ok {
+			return cause
+		}
+		return interrupted
 	}
 	var exc *goja.Exception
 	if errors.As(err, &exc) {
 		return errors.New(exc.String())
 	}
-	// should never happen that we get a non-exception error
+	// goja should only return *Exception or *InterruptedError
 	return err
 }

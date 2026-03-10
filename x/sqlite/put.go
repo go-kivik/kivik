@@ -150,6 +150,10 @@ func (d *db) Put(ctx context.Context, docID string, doc any, opts driver.Options
 			return "", err
 		}
 
+		if err := d.updateDesignDoc(ctx, tx, rev, revision{}, data); err != nil {
+			return "", err
+		}
+
 		return newRev, tx.Commit()
 	}
 

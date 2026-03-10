@@ -15,12 +15,14 @@ package reduce
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"log"
 	"reflect"
 
 	"github.com/go-kivik/kivik/v4/driver"
+	"github.com/go-kivik/kivik/x/sqlite/v4/js"
 )
 
 // Reducer is the interface for iterating over rows of data to be reduced.
@@ -101,9 +103,11 @@ func (*Rows) TotalRows() int64 { return 0 }
 func (*Rows) UpdateSeq() string { return "" }
 
 // Func is the signature of a [CouchDB reduce function], translated to Go.
+// The context controls cancellation of user-defined JavaScript reduce
+// functions. Built-in reduce functions ignore the context.
 //
 // [CouchDB reduce function]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#reduce-and-rereduce-functions
-type Func func(keys [][2]any, values []any, rereduce bool) ([]any, error)
+type Func func(ctx context.Context, keys [][2]any, values []any, rereduce bool) ([]any, error)
 
 // Callback is called with the group depth and result of each intermediate
 // reduce call. It can be used to cache intermediate results.
@@ -113,8 +117,7 @@ const defaultBatchSize = 1000
 
 // Reduce calls fn on rows, and returns the results. The input must be in
 // key-sorted order, and may contain both previously reduced rows, and map
-// output rows.  cb, if not nil, is called with the results of every
-// intermediate reduce step.
+// output rows.
 //
 // The Key field of the returned row(s) will be set only when grouping.
 //
@@ -123,19 +126,19 @@ const defaultBatchSize = 1000
 //	-1: Maximum grouping, same as group=true
 //	 0: No grouping, same as group=false
 //	1+: Group by the first N elements of the key, same as group_level=N
-func Reduce(rows Reducer, javascript string, logger *log.Logger, groupLevel int) (*Rows, error) {
-	return reduceWithBatchSize(rows, javascript, logger, groupLevel, defaultBatchSize)
+func Reduce(ctx context.Context, rows Reducer, javascript string, logger *log.Logger, rt *js.Runtime, groupLevel int) (*Rows, error) {
+	return reduceWithBatchSize(ctx, rows, javascript, logger, rt, groupLevel, defaultBatchSize)
 }
 
-func reduceWithBatchSize(rows Reducer, javascript string, logger *log.Logger, groupLevel int, batchSize int) (*Rows, error) {
-	fn, err := ParseFunc(javascript, logger)
+func reduceWithBatchSize(ctx context.Context, rows Reducer, javascript string, logger *log.Logger, rt *js.Runtime, groupLevel int, batchSize int) (*Rows, error) {
+	fn, err := ParseFunc(javascript, logger, rt)
 	if err != nil {
 		return nil, err
 	}
-	return reduce(rows, fn, groupLevel, batchSize)
+	return reduce(ctx, rows, fn, groupLevel, batchSize)
 }
 
-func reduce(rows Reducer, fn Func, groupLevel int, batchSize int) (*Rows, error) {
+func reduce(ctx context.Context, rows Reducer, fn Func, groupLevel int, batchSize int) (*Rows, error) {
 	out := make(Rows, 0, 1)
 	var (
 		firstKey, lastKey any
@@ -162,7 +165,7 @@ func reduce(rows Reducer, fn Func, groupLevel int, batchSize int) (*Rows, error)
 		if rereduce {
 			keys = nil
 		}
-		results, err := fn(keys, values, rereduce)
+		results, err := fn(ctx, keys, values, rereduce)
 		if err != nil {
 			return err
 		}
@@ -245,7 +248,7 @@ func reduce(rows Reducer, fn Func, groupLevel int, batchSize int) (*Rows, error)
 	for i := 1; i < len(out); i++ {
 		key := truncateKey(out[i].FirstKey, groupLevel)
 		if reflect.DeepEqual(finalKey, key) {
-			return reduce(&out, fn, groupLevel, batchSize)
+			return reduce(ctx, &out, fn, groupLevel, batchSize)
 		}
 	}
 

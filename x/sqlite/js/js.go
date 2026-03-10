@@ -135,7 +135,7 @@ func Reduce(code string) (ReduceFunc, error) {
 // has an "unauthorized" key, the error will have HTTP status 401.
 //
 // [validate_doc_update function]: https://docs.couchdb.org/en/stable/ddocs/ddocs.html#validate-document-update-functions
-type ValidateFunc func(newDoc, oldDoc, userCtx, secObj any) error
+type ValidateFunc func(ctx context.Context, newDoc, oldDoc, userCtx, secObj any) error
 
 // Validate compiles the provided JavaScript code into a ValidateFunc.
 func Validate(code string) (ValidateFunc, error) {
@@ -147,7 +147,9 @@ func Validate(code string) (ValidateFunc, error) {
 	if !ok {
 		panic(fmt.Sprintf("expected validate to be a function, got %T", vm.Get("validate")))
 	}
-	return func(newDoc, oldDoc, userCtx, secObj any) error {
+	return func(ctx context.Context, newDoc, oldDoc, userCtx, secObj any) error {
+		done := watchContext(ctx, vm)
+		defer done()
 		_, err := validateFunc(goja.Undefined(), vm.ToValue(newDoc), vm.ToValue(oldDoc), vm.ToValue(userCtx), vm.ToValue(secObj))
 		if err != nil {
 			return validateException(err)

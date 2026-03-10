@@ -242,3 +242,48 @@ func TestUpdate(t *testing.T) {
 		}
 	})
 }
+
+func TestValidate(t *testing.T) {
+	t.Parallel()
+
+	type test struct {
+		code           string
+		ctx            context.Context //nolint:containedctx // test struct needs ctx to pass to function under test
+		newDoc         any
+		oldDoc         any
+		userCtx        any
+		secObj         any
+		wantCompileErr string
+		wantErr        string
+	}
+
+	tests := testy.NewTable()
+	tests.Add("cancelled context interrupts infinite loop", func() test {
+		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+		t.Cleanup(cancel)
+		return test{
+			code:    `function(newDoc, oldDoc, userCtx, secObj) { while(true) {} }`,
+			ctx:     ctx,
+			newDoc:  map[string]any{"_id": "foo"},
+			oldDoc:  map[string]any{"_id": "foo"},
+			userCtx: map[string]any{},
+			secObj:  map[string]any{},
+			wantErr: "context deadline exceeded",
+		}
+	}())
+
+	tests.Run(t, func(t *testing.T, tt test) {
+		fn, err := Validate(tt.code)
+		if !testy.ErrorMatchesRE(tt.wantCompileErr, err) {
+			t.Fatalf("Validate() error = %v, wantCompileErr /%s/", err, tt.wantCompileErr)
+		}
+		if err != nil {
+			return
+		}
+
+		err = fn(tt.ctx, tt.newDoc, tt.oldDoc, tt.userCtx, tt.secObj)
+		if !testy.ErrorMatchesRE(tt.wantErr, err) {
+			t.Fatalf("fn() error = %v, wantErr /%s/", err, tt.wantErr)
+		}
+	})
+}

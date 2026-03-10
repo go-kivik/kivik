@@ -499,6 +499,9 @@ type DBStats struct {
 	// ExternalSize is the size of the documents in the database, as represented
 	// as JSON, before compression.
 	ExternalSize int64 `json:"-"`
+	// PurgeSeq is the purge sequence number. It increments with each purge
+	// operation performed on the database.
+	PurgeSeq string `json:"purge_seq"`
 	// Cluster reports the cluster replication configuration variables.
 	Cluster *ClusterConfig `json:"cluster,omitempty"`
 	// RawResponse is the raw response body returned by the server, useful if
@@ -552,6 +555,7 @@ func driverStats2kivikStats(i *driver.DBStats) *DBStats {
 		DiskSize:       i.DiskSize,
 		ActiveSize:     i.ActiveSize,
 		ExternalSize:   i.ExternalSize,
+		PurgeSeq:       i.PurgeSeq,
 		Cluster:        cluster,
 		RawResponse:    i.RawResponse,
 	}

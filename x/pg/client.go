@@ -14,7 +14,6 @@ package pg
 
 import (
 	"context"
-	"errors"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -37,10 +36,6 @@ func (c *client) Version(context.Context) (*driver.Version, error) {
 		Version: version,
 		Vendor:  vendor,
 	}, nil
-}
-
-func (c *client) DestroyDB(context.Context, string, driver.Options) error {
-	return errors.ErrUnsupported
 }
 
 func (c *client) DB(string, driver.Options) (driver.DB, error) {

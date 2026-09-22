@@ -2,12 +2,9 @@
 
 ## Functionality
 
-- [ ] **Map/reduce timeout** — No timeout handling for long-running JS
-  functions.
 - [ ] **`revs=true` + attachments in OpenRevs** — Not implemented/tested.
 - [ ] **Historical revision attachments** — Get attachment from old revision,
   correct attachment in conflict scenarios.
-- [ ] **AllDocs on nonexistent DB** — Verify correct error behavior.
 - [ ] **Filter functions** — Need more comprehensive testing/fleshing out.
 
 ## Test Gaps
@@ -15,7 +12,6 @@
 - [ ] **Changes feed `conflicts` option** — Not tested.
 - [ ] **Changes feed mode coverage** — Longpoll missing tests for descending,
   filter, doc_ids, style. Continuous has minimal test coverage.
-- [ ] **DeleteAttachment on missing DB** — Should return "db not found".
 - [ ] **CreateDoc edge cases** — nil doc, UUID configuration options,
   duplicate UUID retry.
 - [ ] **Put with update function interaction** — Not tested.
